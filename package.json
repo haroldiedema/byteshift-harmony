@@ -21,7 +21,7 @@
     "watch": "rollup -c --watch"
   },
   "types": "dist/index.d.ts",
-  "main": "dist/http.js",
+  "main": "dist/index.js",
   "keywords": [
     "byteshift",
     "http",
