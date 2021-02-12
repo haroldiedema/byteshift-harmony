@@ -1,0 +1,42 @@
+{
+  "name": "@byteshift/http",
+  "version": "0.0.1",
+  "description": "An HTTP-server micro-framework",
+  "author": "Harold Iedema <harold@iedema.me>",
+  "devDependencies": {
+    "@rollup/plugin-alias": "^3.1.2",
+    "@rollup/plugin-commonjs": "^17.1.0",
+    "@rollup/plugin-node-resolve": "^11.1.1",
+    "reflect-metadata": "^0.1.13",
+    "rollup": "^2.38.5",
+    "rollup-plugin-node-externals": "^2.2.0",
+    "rollup-plugin-serve": "^1.1.0",
+    "rollup-plugin-terser": "^7.0.2",
+    "rollup-plugin-typescript2": "^0.29.0",
+    "tslib": "^2.1.0",
+    "typescript": "^4.1.5"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c --watch"
+  },
+  "types": "dist/index.d.ts",
+  "main": "dist/http.js",
+  "keywords": [
+    "byteshift",
+    "http",
+    "server",
+    "controller",
+    "cookie",
+    "cookies"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/haroldiedema/byteshift-http/issues"
+  },
+  "homepage": "https://github.com/haroldiedema/byteshift-http/wiki",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/haroldiedema/byteshift-http.git"
+  }
+}
