@@ -1,15 +1,15 @@
-/* Byteshift Elements                                                              _         _             __   _ _____
- *    A self-encapsulating WebComponent framework                                 | |__ _  _| |_ ___  ___ / /  (_) _/ /_
+/* Byteshift Harmony                                                               _         _             __   _ _____
+ *    A component-based HTTP server micro-framework                               | |__ _  _| |_ ___  ___ / /  (_) _/ /_
  *                                                                                | '_ \ || |  _/ -_|(_-</ _ \/ / _/ __/
  * (C)2020, Harold Iedema <harold@iedema.me>                                      |_.__/\_, |\__\___/___/_//_/_/_/ \__/
- * See LICENSE for licensing information                                                |__/                   H T T P
+ * See LICENSE for licensing information                                                |__/             H A R M O N Y
  */
 'use strict';
 
 export class Bag<T>
 {
     private keys: { [name: string]: string } = {};
-    private data: { [name: string]: T }    = {};
+    private data: { [name: string]: T }      = {};
 
     constructor(obj?: { [name: string]: any })
     {
@@ -81,7 +81,7 @@ export class Bag<T>
      */
     public get all(): { [name: string]: T }
     {
-        const result: {[name: string]: T} = {};
+        const result: { [name: string]: T } = {};
 
         Object.keys(this.data).forEach((lowerKey: string) => {
             result[this.keys[lowerKey]] = this.data[lowerKey];
@@ -90,10 +90,25 @@ export class Bag<T>
         return result;
     }
 
+    /**
+     * Invokes the given callback for each element in this bag.
+     *
+     * @param {(value: T, name: string) => any} callback
+     */
     public forEach(callback: (value: T, name: string) => any): void
     {
         Object.keys(this.data).forEach((lowerKey: string) => {
             callback(this.data[lowerKey], this.keys[lowerKey]);
         });
+    }
+
+    /**
+     * Returns an array of values of every item in this bag.
+     */
+    public toArray(sortFn?: (a: T, b: T) => 1 | 0 | -1): T[]
+    {
+        const result = Object.values(this.data);
+
+        return sortFn ? result.sort(sortFn) : result;
     }
 }

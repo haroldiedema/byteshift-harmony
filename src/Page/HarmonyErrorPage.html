@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Error</title>
+    <meta charset="UTF-8">
+    <style type="text/css">
+    body, html {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        color: #272727;
+        background: #eee;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+    }
+
+    * { box-sizing: border-box; }
+
+    main {
+        width: 800px;
+        border: 1px solid #dadade;
+        border-radius: 6px;
+        background: #fff;
+        box-shadow: rgba(50, 50, 93, 0.25) 0 13px 27px -5px, rgba(0, 0, 0, 0.3) 0 8px 16px -8px;
+        overflow: hidden;
+    }
+
+    img {
+        margin-bottom: 10px;
+    }
+
+    header {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        background: #444;
+        color: #fff;
+    }
+
+    header > .title {
+        width: 100%;
+        font-family: "Arial", sans-serif;
+        font-weight: lighter;
+        font-size: 48px;
+        padding: 10px;
+        text-align: center;
+    }
+    footer {
+        padding: 5px;
+        width: 100%;
+        background: #eee;
+        color: #777;
+        font-weight: lighter;
+        font-size: 14px;
+        text-align: center;
+    }
+    section {
+        padding: 20px;
+        text-align: center;
+        font-size: 16px;
+    }
+
+    section > pre {
+        padding: 20px;
+        background: #333;
+        color: #eee;
+        text-align: left;
+        width: 100%;
+        white-space: pre-wrap;
+        font-size: 13px;
+    }
+    </style>
+</head>
+<body>
+<img id="logo" src="data:image/png;base64,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" alt="">
+<main>
+    <header>
+        <div class="title">Something went wrong</div>
+    </header>
+    <section>
+        {{ message }}
+        <pre>{{ trace }}</pre>
+    </section>
+    <footer>
+        {{ title }}
+    </footer>
+</main>
+</body>
+</html>

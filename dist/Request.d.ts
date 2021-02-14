@@ -1,6 +1,6 @@
 /// <reference types="node" />
-import { Bag } from '@/Bag';
-import { IRoute } from '@/Router';
+import { Bag } from './Bag';
+import { IRoute } from './Router/Router';
 import { IncomingMessage } from 'http';
 export declare class Request {
     private r;

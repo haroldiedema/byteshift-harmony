@@ -45,5 +45,14 @@ export declare class Bag<T> {
     get all(): {
         [name: string]: T;
     };
+    /**
+     * Invokes the given callback for each element in this bag.
+     *
+     * @param {(value: T, name: string) => any} callback
+     */
     forEach(callback: (value: T, name: string) => any): void;
+    /**
+     * Returns an array of values of every item in this bag.
+     */
+    toArray(sortFn?: (a: T, b: T) => 1 | 0 | -1): T[];
 }

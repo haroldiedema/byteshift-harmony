@@ -10,11 +10,7 @@
     "allowSyntheticDefaultImports": true,
     "allowJs": true,
     "strict": false,
-    "noImplicitAny": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
+    "noImplicitAny": true
   },
   "include": [
     "src/**/*"

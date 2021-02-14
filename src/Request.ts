@@ -1,14 +1,13 @@
-/* Byteshift Elements                                                              _         _             __   _ _____
- *    A self-encapsulating WebComponent framework                                 | |__ _  _| |_ ___  ___ / /  (_) _/ /_
+/* Byteshift Harmony                                                               _         _             __   _ _____
+ *    A component-based HTTP server micro-framework                               | |__ _  _| |_ ___  ___ / /  (_) _/ /_
  *                                                                                | '_ \ || |  _/ -_|(_-</ _ \/ / _/ __/
  * (C)2020, Harold Iedema <harold@iedema.me>                                      |_.__/\_, |\__\___/___/_//_/_/_/ \__/
- * See LICENSE for licensing information                                                |__/                   H T T P
+ * See LICENSE for licensing information                                                |__/             H A R M O N Y
  */
 'use strict';
 
-import {Bag}             from '@/Bag';
-import {Cookie}          from '@/Cookie';
-import {IRoute}          from '@/Router';
+import {Bag}             from './Bag';
+import {IRoute}          from './Router/Router';
 import {IncomingMessage} from 'http';
 
 const optionalParam = /\((.*?)\)/g;
@@ -238,6 +237,6 @@ export class Request
             }
         }
 
-        return {};
+        return obj;
     }
 }
