@@ -1,151 +1,43 @@
-![](./docs/http.png)
+![](./docs/harmony-header.png)
 ===================
 
-Byteshift HTTP is a tiny but complete HTTP server library designed to be used
-with TypeScript in a NodeJS application.
+## What is Harmony?
 
-## Getting started
+Harmony is a semi-opinionated zero dependency HTTP library similar to the widely
+used express library. The main difference is that Harmony follows the "Model
+View Controller" (MVC) pattern and is designed for large scale structured
+TypeScript applications that are hosted via a NodeJS server.
 
-Install `@byteshift/http` using NPM:
+Harmony is fully extensible via "event interceptors" and can handle nearly any
+templating engine you throw at it. It even supports the use of cookies and
+sessions out of the box to allow you to focus on one thing: Building your
+website.
 
-```shell
-$ npm i @byteshift/http
-```
+### Why should I use Harmony?
 
-... or yarn:
+The Node ecosystem is full of various sized npm packages that all do their own
+thing. If you wish to build a web-server that supports cookies or sessions, a
+templating engine, the use of authentication, firewalls, or any form of
+dependency injection, you'll quickly realize that your project has over 100
+dependencies, not to mention the size of your node_modules directory. If you
+find yourself teaching yourself how to use all these different libraries and
+basically "hacking" things together to make it work for you, and you're tired of
+focusing on other things besides building your own website or application, then
+Harmony would probably suit you best.
 
-```shell
-$ yarn add @byteshift/http
-```
+If you are familiar with one of the well known PHP frameworks like Symfony or
+Laravel, then getting started with Harmony will be a literal walk in the park.
 
-## Setting up the server
+### What do I need to know before working with Harmony?
 
-```typescript
-import {Server} from '@byteshift/http';
+ - Harmony is fully written in TypeScript and will work the best if your project
+   is also written in the same language.
+ - Harmony makes use of decorators (also known as annotations) to configure
+   routes and which template to render.
+   
+If you are unfamiliar with either TypeScript or the use of decorators, it is
+recommended to read up on these topics before diving straight in.
 
-const server = new Server({
-    port: 8080,
-    useHttps: false
-});
+## Quick start
 
-server.start();
-```
-
-Navigate to http://localhost:8080 and you should see a "404 Not Found" message.
-
-### Using HTTPS
-
-You can set-up an HTTPS-server by setting `useHttps` to `true` and providing SSL
-options using the `sslOptions` object. The contents of this object are directly
-passed to Node's `https.createServer()` method, allowing you to specify
-SSL-certificate configuration.
-
-```typescript
-import {Server} from '@byteshift/http';
-
-const server = new Server({
-    port: 8080,
-    useHttps: true,
-    
-    sslOptions: {
-        cert: 'cert-file-contents-here',
-        key: 'private-key-file-contents-here',
-        ca: 'ca-file-contents-here'
-    }
-});
-```
-
-Please refer to https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener
-for all available options.
-
-## Writing and registering a controller
-
-Byteshift-HTTP uses controller classes with configured routes to invoke methods.
-Annotate a method using the `@Route` decorator to let the library know that
-method should be invoked if the configured route matches an incoming request.
-
-For example: `@Route("/", {method: 'GET'})` will match any 'root' route as long
-as the request method is 'GET'.
-
-```typescript
-// HomeController.ts
-import {Response, Route} from '@byteshift/http';
-
-export class HomeController
-{
-    @Route("/", {method: 'GET'})
-    public indexAction(): Response
-    {
-        return new Response('Hello World!');
-    }
-    
-}
-```
-
-```typescript
-// app.ts
-const server = new Server({
-    port: 8080,
-    useHttps: false
-});
-
-
-// Register our controller here.
-server.registerController(HomeController);
-
-// Start the server.
-server.start();
-```
-
-## Controller-as-a-Service
-
-As you might have guessed from the previous example, when registering a
-controller class, you don't instantiate it with the `new` keyword. This is a
-deliberate design choice to allow the use of service containers.
-
-A service container must implement `IServiceContainer` which contains a simple
-`get(ctor: new (...args: any[]) => any): any` method. You can configure the
-reference to a service container by passing the `serviceContainer` option to the
-options object when constructing the `Server`.
-
-If you omit this configuration, the controller is re-instantiated on every
-request to ensure it remains stateless for a single client.
-
-Using the `@byteshift/injector` package as a service container library, the
-configuration would look like this:
-
-```typescript
-// app.ts
-import {Server}      from '@byteshift/http';
-import {ServiceHost} from '@byteshift/injector';
-
-const server = new Server({
-    port: 8080,
-    useHttps: false,
-    serviceContainer: ServiceHost
-});
-
-server.registerController(HomeController);
-server.start();
-```
-
-```typescript
-// HomeController.ts
-import {Service} from '@byteshift/injector';
-
-@Service
-export class HomeController
-{
-    @Inject private readonly someApi: SomeRandomApi;
-    
-    // ... methods here
-    @Route("/user/:username", {method: 'GET'})
-    public async userAction(username: string): Promise<JsonResponse>
-    {
-        const profile = await this.someApi.fetchUser(username);
-        
-        return new JsonResponse({ profile });
-    }
-    
-}
-```
+(TODO)
