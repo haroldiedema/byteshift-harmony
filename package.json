@@ -33,11 +33,11 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/haroldiedema/byteshift-http/issues"
+    "url": "https://github.com/haroldiedema/byteshift-harmony/issues"
   },
-  "homepage": "https://github.com/haroldiedema/byteshift-http/wiki",
+  "homepage": "https://github.com/haroldiedema/byteshift-harmony/wiki",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/haroldiedema/byteshift-http.git"
+    "url": "git+https://github.com/haroldiedema/byteshift-harmony.git"
   }
 }
