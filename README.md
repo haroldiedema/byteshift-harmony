@@ -1,5 +1,4 @@
 ![](./docs/harmony-header.png)
-===================
 
 ## What is Harmony?
 
