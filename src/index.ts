@@ -21,7 +21,7 @@ export * from './Response/JsonResponse';
 export * from './Response/Response';
 export * from './Router/Route';
 export * from './Router/Router';
-export * from './Server';
+export * from './Harmony';
 export * from './Session/Session';
 export * from './Session/ISessionStorage';
 export * from './Templating/Template';

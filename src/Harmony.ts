@@ -28,7 +28,7 @@ import {SessionManager}       from './Session/SessionManager';
 import {StaticAssetHandler}   from './StaticAssetHandler';
 import {TemplateManager}      from './Templating/TemplateManager';
 
-export class Server
+export class Harmony
 {
     private readonly router: Router;
     private readonly server: http.Server;
@@ -561,7 +561,7 @@ export interface IServiceContainer
  */
 export interface IHarmonyPlugin
 {
-    install(server: Server): void;
+    install(server: Harmony): void;
 }
 
 export interface HarmonyEventListener

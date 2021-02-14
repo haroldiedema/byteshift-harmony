@@ -11,7 +11,7 @@ import {StaticRequestEvent}                                      from './Event/S
 import {StaticResponseEvent}                                     from './Event/StaticResponseEvent';
 import {NotFoundError}                                           from './Exception/NotFoundError';
 import {HttpStatus, Response}                                    from './Response/Response';
-import {StaticRequestEventListener, StaticResponseEventListener} from './Server';
+import {StaticRequestEventListener, StaticResponseEventListener} from './Harmony';
 
 import fs   from 'fs';
 import path from 'path';

@@ -1,5 +1,5 @@
 import { ErrorEvent } from './Event/ErrorEvent';
-import { StaticRequestEventListener, StaticResponseEventListener } from './Server';
+import { StaticRequestEventListener, StaticResponseEventListener } from './Harmony';
 export declare class StaticAssetHandler {
     private readonly directories;
     private requestEventListeners;

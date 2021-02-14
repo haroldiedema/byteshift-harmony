@@ -1,6 +1,6 @@
 import { Request } from '../Request';
 import { Response } from '../Response/Response';
-import { RenderTemplateEventListener } from '../Server';
+import { RenderTemplateEventListener } from '../Harmony';
 import { Session } from '../Session/Session';
 import { ITemplate } from './Template';
 export declare class TemplateManager {
