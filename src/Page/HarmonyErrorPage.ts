@@ -9,6 +9,7 @@
 import {ErrorEvent}   from '../Event/ErrorEvent';
 import {ServerError}  from '../Exception/ServerError';
 import {HtmlResponse} from '../Response/HtmlResponse';
+import {HttpStatus}   from '../Response/Response';
 import template       from './HarmonyErrorPage.html';
 
 export class HarmonyErrorPage
@@ -30,6 +31,6 @@ export class HarmonyErrorPage
         html = html.replace('{{ message }}', event.error.message);
         html = html.replace('{{ trace }}', (event.error as Error).stack);
 
-        event.setResponse(new HtmlResponse(html));
+        event.setResponse(new HtmlResponse(html, HttpStatus.NOT_FOUND));
     }
 }

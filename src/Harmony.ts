@@ -335,10 +335,6 @@ export class Harmony
                     const response = errorEvent.getResponse();
 
                     if (false === response.isSent) {
-                        if (response.statusCode === HttpStatus.OK && e.statusCode) {
-                            response.statusCode = e.statusCode;
-                        }
-
                         response.send(res);
                         hasSentResponse = true;
                     }
