@@ -36,6 +36,16 @@ export class Response
     }
 
     /**
+     * Returns the header bag associated with this response.
+     *
+     * @returns {Bag<string>}
+     */
+    public get headers(): Bag<string>
+    {
+        return this._headers;
+    }
+
+    /**
      * Sets the HTTP status code of this response.
      *
      * @param {number} code

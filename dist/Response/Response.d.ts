@@ -1,4 +1,5 @@
 /// <reference types="node" />
+import { Bag } from '../Bag';
 import { CookieBag } from '../Cookie/CookieBag';
 import { ServerResponse } from 'http';
 export declare class Response {
@@ -14,6 +15,12 @@ export declare class Response {
      * @returns {CookieBag}
      */
     get cookies(): CookieBag;
+    /**
+     * Returns the header bag associated with this response.
+     *
+     * @returns {Bag<string>}
+     */
+    get headers(): Bag<string>;
     /**
      * Sets the HTTP status code of this response.
      *

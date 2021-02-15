@@ -156,7 +156,7 @@ export class StaticAssetHandler
                 continue;
             }
 
-            if (fs.existsSync(fileName)) {
+            if (fs.existsSync(fileName) && ! fs.statSync(fileName).isDirectory()) {
                 return fileName;
             }
         }
