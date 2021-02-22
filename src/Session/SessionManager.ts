@@ -33,6 +33,7 @@ export class SessionManager
     {
         const _id = event.request.cookies.get(this.cookieName);
         this.sessionData.set(event.request, new Session(_id ? this.sessionStorage.get(_id) : '{}'));
+        (event as any).session = this.sessionData.get(event.request);
     }
 
     /**
