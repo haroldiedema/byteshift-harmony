@@ -12,6 +12,7 @@ export declare class Harmony {
     private readonly options;
     private readonly router;
     private readonly server;
+    private readonly requestDecoder;
     private readonly sessionManager;
     private readonly staticAssetHandler;
     private readonly templateManager;
@@ -88,6 +89,13 @@ export interface IConstructorOptions {
      * Defaults to 8000.
      */
     port?: number;
+    /**
+     * The maximum size of a request body in bytes.
+     *
+     * Make sure to keep this number relatively low to prevent flood attacks.
+     * Defaults to 1MB.
+     */
+    maxUploadSize?: number;
     static?: {
         /**
          * One or more directories to serve static assets from.

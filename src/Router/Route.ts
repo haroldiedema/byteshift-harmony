@@ -30,8 +30,9 @@ export function Route(path: string, options?: IRouteOptions)
         // Extract method signature.
         const methodArgs = [];
         const paramTypes = Reflect.getMetadata('design:paramtypes', target, methodName);
-        const paramRegEx = /^(\w+)\(([A-Za-z0-9_,\s]+)\)/i.exec(target[methodName].toString());
-        const paramNames = (paramRegEx && paramRegEx[2]) ? paramRegEx[2].split(',').map(n => n.trim()) : [];
+        const paramRegEx = /^[\w]+?\s?(\w+)\(([A-Za-z0-9_,=\s]+)\)[\s]+{/i.exec(target[methodName].toString());
+        const paramNames = ((paramRegEx && paramRegEx[2]) ? paramRegEx[2].split(',').map(n => n.trim()) : [])
+            .map((p: string) => p.split('=')[0].trim());
 
         if (paramNames) {
             for (let i = 0; i < paramNames.length; i++) {

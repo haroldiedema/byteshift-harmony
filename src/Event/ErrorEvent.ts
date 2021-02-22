@@ -8,7 +8,7 @@
 
 import {ResponseAwareEvent} from './ResponseAwareEvent';
 import {ServerError}        from '../Exception/ServerError';
-import {Request}            from '../Request';
+import {Request}            from '../Request/Request';
 
 export class ErrorEvent extends ResponseAwareEvent
 {

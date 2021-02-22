@@ -6,16 +6,13 @@
  */
 'use strict';
 
-import {Request}            from '../Request/Request';
-import {Response}           from '../Response/Response';
+import {HttpStatus, Response} from './Response';
 
-export class StaticResponseEvent
+export class RedirectResponse extends Response
 {
-    public constructor(
-        public readonly request: Request,
-        public readonly response: Response,
-        public readonly fileName: string,
-        public readonly mimeType: string
-    ) {
+    constructor(url: string, statusCode: HttpStatus = HttpStatus.TEMPORARY_REDIRECT)
+    {
+        super('', statusCode);
+        this.headers.set('Location', url);
     }
 }

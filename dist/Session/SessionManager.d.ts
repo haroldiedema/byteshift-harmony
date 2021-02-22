@@ -1,6 +1,6 @@
 import { RequestEvent } from '../Event/RequestEvent';
 import { ResponseEvent } from '../Event/ResponseEvent';
-import { Request } from '../Request';
+import { Request } from '../Request/Request';
 import { Session } from './Session';
 import { ISessionStorage } from './ISessionStorage';
 /**

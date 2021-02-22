@@ -6,32 +6,34 @@
  */
 'use strict';
 
-import http                   from 'http';
-import https                  from 'https';
-import tls                    from 'tls';
-import {ErrorEvent}           from './Event/ErrorEvent';
-import {RenderTemplateEvent}  from './Event/RenderTemplateEvent';
-import {RequestEvent}         from './Event/RequestEvent';
-import {ResponseEvent}        from './Event/ResponseEvent';
-import {StaticRequestEvent}   from './Event/StaticRequestEvent';
-import {StaticResponseEvent}  from './Event/StaticResponseEvent';
-import {InternalServerError}  from './Exception/InternalServerError';
-import {NotFoundError}        from './Exception/NotFoundError';
-import {HarmonyErrorPage}     from './Page/HarmonyErrorPage';
-import {Request}              from './Request';
-import {HttpStatus, Response} from './Response/Response';
-import {IRoute, Router}       from './Router/Router';
-import {InMemoryStorage}      from './Session/InMemoryStorage';
-import {ISessionStorage}      from './Session/ISessionStorage';
-import {Session}              from './Session/Session';
-import {SessionManager}       from './Session/SessionManager';
-import {StaticAssetHandler}   from './StaticAssetHandler';
-import {TemplateManager}      from './Templating/TemplateManager';
+import http, {IncomingMessage} from 'http';
+import https                   from 'https';
+import tls                   from 'tls';
+import {ErrorEvent}          from './Event/ErrorEvent';
+import {RenderTemplateEvent} from './Event/RenderTemplateEvent';
+import {RequestEvent}        from './Event/RequestEvent';
+import {ResponseEvent}       from './Event/ResponseEvent';
+import {StaticRequestEvent}  from './Event/StaticRequestEvent';
+import {StaticResponseEvent} from './Event/StaticResponseEvent';
+import {InternalServerError} from './Exception/InternalServerError';
+import {NotFoundError}       from './Exception/NotFoundError';
+import {HarmonyErrorPage}    from './Page/HarmonyErrorPage';
+import {Request}             from './Request/Request';
+import {RequestBodyDecoder}  from './Request/RequestBodyDecoder';
+import {Response}            from './Response/Response';
+import {IRoute, Router}      from './Router/Router';
+import {InMemoryStorage}     from './Session/InMemoryStorage';
+import {ISessionStorage}     from './Session/ISessionStorage';
+import {Session}             from './Session/Session';
+import {SessionManager}      from './Session/SessionManager';
+import {StaticAssetHandler}  from './StaticAssetHandler';
+import {TemplateManager}     from './Templating/TemplateManager';
 
 export class Harmony
 {
     private readonly router: Router;
     private readonly server: http.Server;
+    private readonly requestDecoder: RequestBodyDecoder;
     private readonly sessionManager: SessionManager;
     private readonly staticAssetHandler: StaticAssetHandler;
     private readonly templateManager: TemplateManager;
@@ -46,6 +48,8 @@ export class Harmony
         this.server = options.enableHttps
                       ? https.createServer(options.httpsOptions, this.handle.bind(this))
                       : http.createServer(this.handle.bind(this));
+
+        this.requestDecoder = new RequestBodyDecoder(options.maxUploadSize || (1048576));
 
         // Register default error page handler with the lowest priority.
         this.registerErrorEventListener((new HarmonyErrorPage()).onServerError, -Infinity);
@@ -224,10 +228,14 @@ export class Harmony
     /**
      * Registers a render template event listener.
      */
-    public registerRenderTemplateListener(callback: (e: RenderTemplateEvent) => Promise<void>, priority: number = 0): void
+    public registerRenderTemplateListener(
+        callback: (e: RenderTemplateEvent) => Promise<void>,
+        priority: number = 0,
+    ): void
     {
         if (typeof this.templateManager === 'undefined') {
-            throw new Error('Unable to register a render template event listener because templating is currently disabled. Please ensure that at least one template directory is configured.');
+            throw new Error(
+                'Unable to register a render template event listener because templating is currently disabled. Please ensure that at least one template directory is configured.');
         }
 
         this.templateManager.registerRenderEventListener({callback, priority});
@@ -241,8 +249,18 @@ export class Harmony
      */
     private async handle(req: http.IncomingMessage, res: http.ServerResponse): Promise<void>
     {
-        const request = new Request(req),
-              route   = this.router.findByRequest(request);
+        let body, request, route;
+
+        try {
+            body    = await this.requestDecoder.decode(req, res);
+            request = new Request(req, body);
+            route   = this.router.findByRequest(request);
+        } catch (e) {
+            // If anything goes wrong during the request build-up phase, the
+            // client most likely terminated the connection. Ignore everything
+            // at this point and return.
+            return;
+        }
 
         let controller;
 
@@ -386,7 +404,7 @@ export class Harmony
             }
         }
 
-        return await fn(...args);
+        return await fn.bind(controller)(...args);
     }
 }
 
@@ -398,6 +416,14 @@ export interface IConstructorOptions
      * Defaults to 8000.
      */
     port?: number;
+
+    /**
+     * The maximum size of a request body in bytes.
+     *
+     * Make sure to keep this number relatively low to prevent flood attacks.
+     * Defaults to 1MB.
+     */
+    maxUploadSize?: number;
 
     static?: {
         /**

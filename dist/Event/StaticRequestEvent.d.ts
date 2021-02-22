@@ -1,5 +1,5 @@
 import { ResponseAwareEvent } from '../Event/ResponseAwareEvent';
-import { Request } from '../Request';
+import { Request } from '../Request/Request';
 export declare class StaticRequestEvent extends ResponseAwareEvent {
     readonly request: Request;
     readonly fileName: string;

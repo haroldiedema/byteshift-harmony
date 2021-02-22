@@ -1,5 +1,5 @@
 import { ResponseAwareEvent } from './ResponseAwareEvent';
-import { Request } from '../Request';
+import { Request } from '../Request/Request';
 import { IRoute } from '../Router/Router';
 export declare class RequestEvent extends ResponseAwareEvent {
     readonly request: Request;

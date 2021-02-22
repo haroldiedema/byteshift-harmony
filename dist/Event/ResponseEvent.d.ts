@@ -1,4 +1,4 @@
-import { Request } from '../Request';
+import { Request } from '../Request/Request';
 import { Response } from '../Response/Response';
 import { IRoute } from '../Router/Router';
 export declare class ResponseEvent {

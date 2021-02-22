@@ -1,4 +1,4 @@
-import { Request } from '../Request';
+import { Request } from '../Request/Request';
 import { Response } from '../Response/Response';
 export declare class StaticResponseEvent {
     readonly request: Request;

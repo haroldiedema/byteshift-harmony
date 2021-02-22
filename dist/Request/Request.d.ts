@@ -1,7 +1,9 @@
 /// <reference types="node" />
-import { Bag } from './Bag';
-import { IRoute } from './Router/Router';
+import { Bag } from '../Bag';
+import { IRoute } from '../Router/Router';
 import { IncomingMessage } from 'http';
+import { IUploadedFile } from './IUploadedFile';
+import { RequestBody } from './RequestBody';
 export declare class Request {
     private r;
     private readonly _clientIp;
@@ -11,10 +13,14 @@ export declare class Request {
     private readonly _cookies;
     private readonly _query;
     private readonly _path;
+    private readonly _post;
+    private readonly _files;
     private readonly _body;
-    constructor(r: IncomingMessage, body: Buffer);
+    constructor(r: IncomingMessage, body: RequestBody);
     /**
      * Returns a value from one of the available bags in the following order:
+     *  - post fields
+     *  - files
      *  - cookies
      *  - headers
      *  - parameters (derived from path)
@@ -66,6 +72,24 @@ export declare class Request {
      * @returns {Bag<string>}
      */
     get parameters(): Bag<string>;
+    /**
+     * Returns the POST-fields bag.
+     *
+     * @returns {Bag<string | string[]>}
+     */
+    get post(): Bag<string | string[]>;
+    /**
+     * Returns the files bag.
+     *
+     * @returns {Bag<IUploadedFile | IUploadedFile[]>}
+     */
+    get files(): Bag<IUploadedFile | IUploadedFile[]>;
+    /**
+     * Returns the request body as parsed JSON content.
+     *
+     * @returns {any}
+     */
+    get json(): any;
     /**
      * Returns true if the given route matches this request.
      *

@@ -6,7 +6,7 @@
  */
 'use strict';
 
-import {Request} from '../Request';
+import {Request} from '../Request/Request';
 
 export class Router
 {

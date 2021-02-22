@@ -7,7 +7,7 @@
 'use strict';
 
 import {ResponseAwareEvent} from '../Event/ResponseAwareEvent';
-import {Request}            from '../Request';
+import {Request}            from '../Request/Request';
 
 export class StaticRequestEvent extends ResponseAwareEvent
 {

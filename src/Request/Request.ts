@@ -6,9 +6,11 @@
  */
 'use strict';
 
-import {Bag}             from './Bag';
-import {IRoute}          from './Router/Router';
+import {Bag}             from '../Bag';
+import {IRoute}          from '../Router/Router';
 import {IncomingMessage} from 'http';
+import {IUploadedFile}   from './IUploadedFile';
+import {RequestBody}     from './RequestBody';
 
 const optionalParam = /\((.*?)\)/g;
 const namedParam    = /(\(\?)?:\w+/g;
@@ -25,8 +27,11 @@ export class Request
     private readonly _cookies: Bag<string>;
     private readonly _query: Bag<string | number>;
     private readonly _path: string;
+    private readonly _post: Bag<string | string[]>;
+    private readonly _files: Bag<IUploadedFile | IUploadedFile[]>;
+    private readonly _body: Buffer;
 
-    public constructor(private r: IncomingMessage)
+    public constructor(private r: IncomingMessage, body: RequestBody)
     {
         // const u = url.parse(r.url, true, true);
         const u: URL                     = new URL(r.url, 'http://localhost/');
@@ -34,17 +39,22 @@ export class Request
 
         u.searchParams.forEach((v, k) => q[k] = v);
 
-        this._clientIp   = r.socket.remoteAddress;
+        this._clientIp   = r.headers['x-forwarded-for'] as string || r.socket.remoteAddress;
         this._method     = r.method.toUpperCase();
-        this._path       = u.pathname;
+        this._path       = u.pathname.replace(/(\/)$/g, '').toLowerCase() || '/';
         this._headers    = new Bag(r.headers);
         this._cookies    = new Bag(r.headers.cookie ? this._parseCookies(r.headers.cookie) : {});
         this._query      = new Bag(q);
         this._parameters = new Bag();
+        this._post       = body.fields;
+        this._files      = body.files;
+        this._body       = body.raw;
     }
 
     /**
      * Returns a value from one of the available bags in the following order:
+     *  - post fields
+     *  - files
      *  - cookies
      *  - headers
      *  - parameters (derived from path)
@@ -55,11 +65,17 @@ export class Request
      */
     public get(name: string): any
     {
-        if (this._cookies.has(name)) {
-            return this._cookies.get(name);
+        if (this._post.has(name)) {
+            return this._post.get(name);
+        }
+        if (this._files.has(name)) {
+            return this._files.get(name);
         }
         if (this._headers.has(name)) {
             return this._headers.get(name);
+        }
+        if (this._cookies.has(name)) {
+            return this._cookies.get(name);
         }
         if (this._parameters.has(name)) {
             return this._parameters.get(name);
@@ -139,6 +155,40 @@ export class Request
     public get parameters(): Bag<string>
     {
         return this._parameters;
+    }
+
+    /**
+     * Returns the POST-fields bag.
+     *
+     * @returns {Bag<string | string[]>}
+     */
+    public get post(): Bag<string | string[]>
+    {
+        return this._post;
+    }
+
+    /**
+     * Returns the files bag.
+     *
+     * @returns {Bag<IUploadedFile | IUploadedFile[]>}
+     */
+    public get files(): Bag<IUploadedFile | IUploadedFile[]>
+    {
+        return this._files;
+    }
+
+    /**
+     * Returns the request body as parsed JSON content.
+     *
+     * @returns {any}
+     */
+    public get json(): any
+    {
+        try {
+            return JSON.parse(this._body.toString());
+        } catch (e) {
+            return null;
+        }
     }
 
     /**

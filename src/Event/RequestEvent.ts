@@ -7,7 +7,7 @@
 'use strict';
 
 import {ResponseAwareEvent} from './ResponseAwareEvent';
-import {Request}            from '../Request';
+import {Request}            from '../Request/Request';
 import {IRoute}             from '../Router/Router';
 
 export class RequestEvent extends ResponseAwareEvent

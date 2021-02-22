@@ -11,7 +11,7 @@ import path                          from 'path';
 import {RenderTemplateEvent}         from '../Event/RenderTemplateEvent';
 import {InternalServerError}         from '../Exception/InternalServerError';
 import {NotFoundError}               from '../Exception/NotFoundError';
-import {Request}                     from '../Request';
+import {Request}                     from '../Request/Request';
 import {Response}                    from '../Response/Response';
 import {RenderTemplateEventListener} from '../Harmony';
 import {Session}                     from '../Session/Session';

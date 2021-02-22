@@ -1,4 +1,4 @@
-import { Request } from '../Request';
+import { Request } from '../Request/Request';
 export declare class Router {
     private routes;
     /**

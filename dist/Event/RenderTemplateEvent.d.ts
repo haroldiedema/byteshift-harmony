@@ -1,4 +1,4 @@
-import { Request } from '../Request';
+import { Request } from '../Request/Request';
 import { Session } from '../Session/Session';
 import { ResponseAwareEvent } from './ResponseAwareEvent';
 export declare class RenderTemplateEvent extends ResponseAwareEvent {

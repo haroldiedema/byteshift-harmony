@@ -10,7 +10,7 @@ import {HttpStatus, Response} from './Response';
 
 export class HtmlResponse extends Response
 {
-    constructor(html: string, statusCode: HttpStatus = HttpStatus.OK, pretty: boolean = true)
+    constructor(html: string, statusCode: HttpStatus = HttpStatus.OK)
     {
         super(html, statusCode, 'text/html');
     }
