@@ -6,13 +6,14 @@
  */
 'use strict';
 
+import {Session}            from '../Session/Session';
 import {ResponseAwareEvent} from './ResponseAwareEvent';
 import {Request}            from '../Request/Request';
 import {IRoute}             from '../Router/Router';
 
 export class RequestEvent extends ResponseAwareEvent
 {
-    public constructor(public readonly request: Request, public readonly route: IRoute)
+    public constructor(public readonly request: Request, public readonly route: IRoute, public readonly session?: Session)
     {
         super();
     }

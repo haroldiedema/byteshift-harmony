@@ -9,10 +9,11 @@
 import {Request}  from '../Request/Request';
 import {Response} from '../Response/Response';
 import {IRoute}   from '../Router/Router';
+import {Session}  from '../Session/Session';
 
 export class ResponseEvent
 {
-    public constructor(public readonly request: Request, public readonly route: IRoute, public readonly response: Response)
+    public constructor(public readonly request: Request, public readonly route: IRoute, public readonly response: Response, public readonly session?: Session)
     {
     }
 }
