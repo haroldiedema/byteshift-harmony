@@ -281,7 +281,7 @@ export class Harmony
             // for incoming requests before the controller method is fired.
             // This would allow firewall type of functionality to exist, or
             // generic services that serve static content.
-            const requestEvent = new RequestEvent(request, route, this.sessionManager.getSessionByRequest(request));
+            const requestEvent = new RequestEvent(request, route, this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined);
 
             let stopPropagation = false,
                 response;
@@ -327,7 +327,7 @@ export class Harmony
             // Fire the 'response' event to allow external services to modify
             // the returned response. For example, setting specific cookies or
             // other headers.
-            const responseEvent = new ResponseEvent(request, route, response, this.sessionManager.getSessionByRequest(request));
+            const responseEvent = new ResponseEvent(request, route, response, this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined);
             for (let listener of this.responseEventListeners) {
                 if (false === listener.callback(responseEvent)) {
                     break;
