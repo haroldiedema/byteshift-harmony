@@ -7,6 +7,7 @@ import { RequestEvent } from './Event/RequestEvent';
 import { ResponseEvent } from './Event/ResponseEvent';
 import { StaticRequestEvent } from './Event/StaticRequestEvent';
 import { StaticResponseEvent } from './Event/StaticResponseEvent';
+import { UpgradeEvent } from './Event/UpgradeEvent';
 import { ISessionStorage } from './Session/ISessionStorage';
 export declare class Harmony {
     private readonly options;
@@ -19,6 +20,7 @@ export declare class Harmony {
     private errorEventListeners;
     private requestEventListeners;
     private responseEventListeners;
+    private upgradeEventListeners;
     constructor(options: IConstructorOptions);
     /**
      * Starts the HTTP server.
@@ -30,6 +32,12 @@ export declare class Harmony {
      * @param {IHarmonyPlugin} plugin
      */
     use(plugin: IHarmonyPlugin): void;
+    /**
+     * Returns the HTTP(s) server of this Harmony instance.
+     *
+     * @returns {http.Server}
+     */
+    get httpServer(): http.Server;
     /**
      * Registers a Controller class.
      *
@@ -43,6 +51,10 @@ export declare class Harmony {
      * Registers an error event listener.
      */
     registerErrorEventListener(callback: (e: ErrorEvent) => boolean | void | Promise<boolean> | Promise<void>, priority?: number): void;
+    /**
+     * Registers an upgrade event listener.
+     */
+    registerUpgradeEventListener(callback: (e: UpgradeEvent) => boolean | void | Promise<boolean> | Promise<void>, priority?: number): void;
     /**
      * Registers a request event listener.
      */
@@ -222,6 +234,12 @@ export interface IConstructorOptions {
      * before it is sent.
      */
     responseEventListeners?: ResponseEventListener[];
+    /**
+     * A list of event listeners that are invoked whenever an 'upgrade' request
+     * was sent to the server to establish a bi-directional WebSocket
+     * connection between the server and the browser.
+     */
+    upgradeEventListeners?: UpgradeEventListener[];
 }
 /**
  * Represents a service container.
@@ -266,6 +284,18 @@ export interface RequestEventListener extends HarmonyEventListener {
  */
 export interface ResponseEventListener extends HarmonyEventListener {
     callback: (event: ResponseEvent) => boolean | void | Promise<boolean> | Promise<void>;
+}
+/**
+ * Denotes an event listener that will have its callback invoked whenever the
+ * server received an "upgrade" request to establish a bi-directional WebSocket
+ * connection with the client.
+ *
+ * The callback must return {true} to let Harmony know the request has been
+ * dealt with, or {false}, {undefined} or void if the event handler could not
+ * process the request. In this case, the next event handler will be invoked.
+ */
+export interface UpgradeEventListener extends HarmonyEventListener {
+    callback: (event: UpgradeEvent) => boolean | void | Promise<boolean> | Promise<void>;
 }
 /**
  * Denotes an event listener that will have its callback invoked whenever a

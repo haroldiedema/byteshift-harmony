@@ -8,17 +8,20 @@
 
 import http, {IncomingMessage} from 'http';
 import https                   from 'https';
-import tls                   from 'tls';
+import {Socket}                from 'net';
+import tls                     from 'tls';
 import {ErrorEvent}          from './Event/ErrorEvent';
 import {RenderTemplateEvent} from './Event/RenderTemplateEvent';
 import {RequestEvent}        from './Event/RequestEvent';
 import {ResponseEvent}       from './Event/ResponseEvent';
 import {StaticRequestEvent}  from './Event/StaticRequestEvent';
 import {StaticResponseEvent} from './Event/StaticResponseEvent';
+import {UpgradeEvent}        from './Event/UpgradeEvent';
 import {InternalServerError} from './Exception/InternalServerError';
 import {NotFoundError}       from './Exception/NotFoundError';
 import {HarmonyErrorPage}    from './Page/HarmonyErrorPage';
 import {Request}             from './Request/Request';
+import {RequestBody}         from './Request/RequestBody';
 import {RequestBodyDecoder}  from './Request/RequestBodyDecoder';
 import {Response}            from './Response/Response';
 import {IRoute, Router}      from './Router/Router';
@@ -41,6 +44,7 @@ export class Harmony
     private errorEventListeners: ErrorEventListener[]       = [];
     private requestEventListeners: RequestEventListener[]   = [];
     private responseEventListeners: ResponseEventListener[] = [];
+    private upgradeEventListeners: UpgradeEventListener[]   = [];
 
     constructor(private readonly options: IConstructorOptions)
     {
@@ -68,6 +72,9 @@ export class Harmony
         }
         if (options.responseEventListeners) {
             options.responseEventListeners.forEach(e => this.registerResponseEventListener(e.callback, e.priority));
+        }
+        if (options.upgradeEventListeners) {
+            options.upgradeEventListeners.forEach(e => this.registerUpgradeEventListener(e.callback, e.priority));
         }
 
         // Session management.
@@ -124,6 +131,36 @@ export class Harmony
                 });
             }
         }
+
+        this.server.on('error', () => {
+            // Binding to the 'error' event prevents the server from crashing
+            // when a socket-error occurs. These typically occur when the
+            // client unexpectedly terminates the connection while we're still
+            // trying to read data from the socket.
+
+            /* NO-OP */
+        });
+
+        // Handle upgrade events.
+        this.server.on('upgrade', (message: IncomingMessage, socket: Socket) => {
+            try {
+                const request = new Request(message, new RequestBody(Buffer.from(''), []));
+                const event   = new UpgradeEvent(
+                    request,
+                    socket,
+                    this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined
+                );
+
+                for (let handler of this.upgradeEventListeners) {
+                    if (handler.callback(event)) {
+                        return;
+                    }
+                }
+            } catch (e) {
+                // Don't let the server crash on any errors here.
+                console.warn(e);
+            }
+        });
     }
 
     /**
@@ -142,6 +179,16 @@ export class Harmony
     public use(plugin: IHarmonyPlugin): void
     {
         plugin.install(this);
+    }
+
+    /**
+     * Returns the HTTP(s) server of this Harmony instance.
+     *
+     * @returns {http.Server}
+     */
+    public get httpServer(): http.Server
+    {
+        return this.server;
     }
 
     /**
@@ -167,6 +214,17 @@ export class Harmony
     {
         this.errorEventListeners.push({callback: callback, priority: priority});
         this.errorEventListeners = this.errorEventListeners.sort((a, b) => a.priority > b.priority ? -1 : 1);
+    }
+
+    /**
+     * Registers an upgrade event listener.
+     */
+    public registerUpgradeEventListener(
+        callback: (e: UpgradeEvent) => boolean | void | Promise<boolean> | Promise<void>,
+        priority: number = 0,
+    ) {
+        this.upgradeEventListeners.push({callback: callback, priority: priority});
+        this.upgradeEventListeners = this.upgradeEventListeners.sort((a, b) => a.priority > b.priority ? -1 : 1);
     }
 
     /**
@@ -567,6 +625,13 @@ export interface IConstructorOptions
      * before it is sent.
      */
     responseEventListeners?: ResponseEventListener[];
+
+    /**
+     * A list of event listeners that are invoked whenever an 'upgrade' request
+     * was sent to the server to establish a bi-directional WebSocket
+     * connection between the server and the browser.
+     */
+    upgradeEventListeners?: UpgradeEventListener[];
 }
 
 /**
@@ -623,6 +688,20 @@ export interface RequestEventListener extends HarmonyEventListener
 export interface ResponseEventListener extends HarmonyEventListener
 {
     callback: (event: ResponseEvent) => boolean | void | Promise<boolean> | Promise<void>;
+}
+
+/**
+ * Denotes an event listener that will have its callback invoked whenever the
+ * server received an "upgrade" request to establish a bi-directional WebSocket
+ * connection with the client.
+ *
+ * The callback must return {true} to let Harmony know the request has been
+ * dealt with, or {false}, {undefined} or void if the event handler could not
+ * process the request. In this case, the next event handler will be invoked.
+ */
+export interface UpgradeEventListener extends HarmonyEventListener
+{
+    callback: (event: UpgradeEvent) => boolean | void | Promise<boolean> | Promise<void>;
 }
 
 /**
