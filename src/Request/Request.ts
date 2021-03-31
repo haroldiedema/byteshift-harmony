@@ -41,7 +41,7 @@ export class Request
 
         this._clientIp   = r.headers['x-forwarded-for'] as string || r.socket.remoteAddress;
         this._method     = r.method.toUpperCase();
-        this._path       = u.pathname.replace(/(\/)$/g, '').toLowerCase() || '/';
+        this._path       = u.pathname.replace(/(\/)$/g, '') || '/';
         this._headers    = new Bag(r.headers);
         this._cookies    = new Bag(r.headers.cookie ? this._parseCookies(r.headers.cookie) : {});
         this._query      = new Bag(q);
