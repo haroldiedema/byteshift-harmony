@@ -25,7 +25,7 @@ export class CookieBag
         value: string,
         ttl: number                                = (3600 * 24),
         domain: string                             = null,
-        path: string                               = null,
+        path: string                               = '/',
         httpOnly: boolean                          = false,
         secure: boolean                            = false,
         sameSite: true | 'strict' | 'lax' | 'none' = 'lax',
