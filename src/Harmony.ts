@@ -35,7 +35,7 @@ import {TemplateManager}     from './Templating/TemplateManager';
 export class Harmony
 {
     private readonly router: Router;
-    private readonly server: http.Server;
+    private readonly server: http.Server | https.Server;
     private readonly requestDecoder: RequestBodyDecoder;
     private readonly sessionManager: SessionManager;
     private readonly staticAssetHandler: StaticAssetHandler;
@@ -56,6 +56,17 @@ export class Harmony
                       : http.createServer(this.handle.bind(this));
 
         this.requestDecoder = new RequestBodyDecoder(options.maxUploadSize || (1048576));
+
+        // SNI configuration.
+        if (options.sni && typeof options.sni === 'object') {
+            if (options.enableHttps === false) {
+                console.warn('SNI configuration is ignored because HTTPS is disabled.');
+            } else {
+                Object.keys(options.sni).forEach((hostname: string) => {
+                    (this.server as https.Server).addContext(hostname, options.sni[hostname]);
+                });
+            }
+        }
 
         // Register default error page handler with the lowest priority.
         this.registerErrorEventListener((new HarmonyErrorPage()).onServerError, -Infinity);
@@ -191,6 +202,23 @@ export class Harmony
     public get httpServer(): http.Server
     {
         return this.server;
+    }
+
+    /**
+     * Adds a secure context if the request hostname matches the given hostname (or wildcard).
+     *
+     * @param {string} hostname
+     * @param {tls.SecureContextOptions} options
+     */
+    public addServerNameIdentificationContext(hostname: string, options: tls.SecureContextOptions): void
+    {
+        if (this.server instanceof https.Server) {
+            this.server.addContext(hostname, options);
+
+            return;
+        }
+
+        throw new Error('Unable to add SNI configuration while HTTPS is disabled.');
     }
 
     /**
@@ -628,6 +656,12 @@ export interface IConstructorOptions
      * Options to pass to {https.createServer} when 'useHttps' is enabled.
      */
     httpsOptions?: tls.SecureContextOptions & tls.TlsOptions & http.ServerOptions;
+
+    /**
+     * SNI (Server Name Identification) configuration used for serving multiple
+     * domains over HTTPS with different certificates.
+     */
+    sni?: {[hostname: string]: tls.SecureContextOptions};
 
     /**
      * A service container to pull controller classes from.

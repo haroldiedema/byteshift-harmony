@@ -42,6 +42,13 @@ export declare class Harmony {
      */
     get httpServer(): http.Server;
     /**
+     * Adds a secure context if the request hostname matches the given hostname (or wildcard).
+     *
+     * @param {string} hostname
+     * @param {tls.SecureContextOptions} options
+     */
+    addServerNameIdentificationContext(hostname: string, options: tls.SecureContextOptions): void;
+    /**
      * Returns the session associated with the given request.
      *
      * @param {Request} request
@@ -224,6 +231,13 @@ export interface IConstructorOptions {
      * Options to pass to {https.createServer} when 'useHttps' is enabled.
      */
     httpsOptions?: tls.SecureContextOptions & tls.TlsOptions & http.ServerOptions;
+    /**
+     * SNI (Server Name Identification) configuration used for serving multiple
+     * domains over HTTPS with different certificates.
+     */
+    sni?: {
+        [hostname: string]: tls.SecureContextOptions;
+    };
     /**
      * A service container to pull controller classes from.
      *
