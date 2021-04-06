@@ -1,6 +1,6 @@
 {
   "name": "@byteshift/harmony",
-  "version": "1.0.8",
+  "version": "1.1.0",
   "description": "A component based HTTP server micro-framework",
   "author": "Harold Iedema <harold@iedema.me>",
   "devDependencies": {

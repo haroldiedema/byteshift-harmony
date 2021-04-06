@@ -46,6 +46,8 @@ export class Harmony
     private responseEventListeners: ResponseEventListener[] = [];
     private upgradeEventListeners: UpgradeEventListener[]   = [];
 
+    private typedControllerArguments: Map<any, (request: Request) => any> = new Map();
+
     constructor(private readonly options: IConstructorOptions)
     {
         this.router = new Router();
@@ -192,6 +194,21 @@ export class Harmony
     }
 
     /**
+     * Returns the session associated with the given request.
+     *
+     * @param {Request} request
+     * @returns {Session}
+     */
+    public getSessionByRequest(request: Request): Session
+    {
+        if (! this.sessionManager) {
+            throw new Error('Session management is disabled.');
+        }
+
+        return this.sessionManager.getSessionByRequest(request);
+    }
+
+    /**
      * Registers a Controller class.
      *
      * The given class must contain at least one @Route annotation on a method
@@ -202,6 +219,22 @@ export class Harmony
     public registerController(controller: any): void
     {
         this.router.registerController(controller);
+    }
+
+    /**
+     * Registers a typed controller method argument.
+     *
+     * The given callback is invoked when a controller method contains a typed
+     * argument with the given type. The return value of the callback is then
+     * injected in the controller method. This works similarly to the default
+     * Request and Session typed parameters, but for custom objects.
+     *
+     * @param {*} type
+     * @param {(request: Request) => any} callback
+     */
+    public registerTypedControllerArgument(type: any, callback: (request: Request) => Promise<any>): void
+    {
+        this.typedControllerArguments.set(type, callback);
     }
 
     /**
@@ -445,17 +478,24 @@ export class Harmony
         const args: any[]      = [];
         const params: string[] = Object.values<string>(request.parameters.all);
 
+        const typedArguments = new Map<any, (request: Request) => any>();
+        typedArguments.set(Request, (r: Request) => r);
+        typedArguments.set(Session, (r: Request) => {
+            if (!this.sessionManager) {
+                throw new InternalServerError('Controller attempted to access Session, but sessions are disabled.');
+            }
+            return this.sessionManager.getSessionByRequest(request);
+        });
+
+        this.typedControllerArguments.forEach((callback, key) => {
+            typedArguments.set(key, callback);
+        });
+
         for (let i = 0; i < route.signature.length; i++) {
             const methodArg = route.signature[i];
 
-            if (methodArg.type === Request) {
-                args.push(request);
-                params.unshift(null);
-            } else if (methodArg.type === Session) {
-                if (!this.sessionManager) {
-                    throw new InternalServerError('Controller attempted to access Session, but sessions are disabled.');
-                }
-                args.push(this.sessionManager.getSessionByRequest(request));
+            if (typedArguments.has(methodArg.type)) {
+                args.push(await (typedArguments.get(methodArg.type))(request));
                 params.unshift(null);
             } else {
                 args.push(params[i]);

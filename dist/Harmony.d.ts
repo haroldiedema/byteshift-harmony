@@ -8,7 +8,9 @@ import { ResponseEvent } from './Event/ResponseEvent';
 import { StaticRequestEvent } from './Event/StaticRequestEvent';
 import { StaticResponseEvent } from './Event/StaticResponseEvent';
 import { UpgradeEvent } from './Event/UpgradeEvent';
+import { Request } from './Request/Request';
 import { ISessionStorage } from './Session/ISessionStorage';
+import { Session } from './Session/Session';
 export declare class Harmony {
     private readonly options;
     private readonly router;
@@ -21,6 +23,7 @@ export declare class Harmony {
     private requestEventListeners;
     private responseEventListeners;
     private upgradeEventListeners;
+    private typedControllerArguments;
     constructor(options: IConstructorOptions);
     /**
      * Starts the HTTP server.
@@ -39,6 +42,13 @@ export declare class Harmony {
      */
     get httpServer(): http.Server;
     /**
+     * Returns the session associated with the given request.
+     *
+     * @param {Request} request
+     * @returns {Session}
+     */
+    getSessionByRequest(request: Request): Session;
+    /**
      * Registers a Controller class.
      *
      * The given class must contain at least one @Route annotation on a method
@@ -47,6 +57,18 @@ export declare class Harmony {
      * @param controller
      */
     registerController(controller: any): void;
+    /**
+     * Registers a typed controller method argument.
+     *
+     * The given callback is invoked when a controller method contains a typed
+     * argument with the given type. The return value of the callback is then
+     * injected in the controller method. This works similarly to the default
+     * Request and Session typed parameters, but for custom objects.
+     *
+     * @param {*} type
+     * @param {(request: Request) => any} callback
+     */
+    registerTypedControllerArgument(type: any, callback: (request: Request) => Promise<any>): void;
     /**
      * Registers an error event listener.
      */
