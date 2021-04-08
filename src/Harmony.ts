@@ -8,16 +8,17 @@
 
 import http, {IncomingMessage} from 'http';
 import https                   from 'https';
+import * as net                from 'net';
 import {Socket}                from 'net';
 import tls                     from 'tls';
-import {ErrorEvent}          from './Event/ErrorEvent';
-import {RenderTemplateEvent} from './Event/RenderTemplateEvent';
-import {RequestEvent}        from './Event/RequestEvent';
-import {ResponseEvent}       from './Event/ResponseEvent';
-import {StaticRequestEvent}  from './Event/StaticRequestEvent';
-import {StaticResponseEvent} from './Event/StaticResponseEvent';
-import {UpgradeEvent}        from './Event/UpgradeEvent';
-import {InternalServerError} from './Exception/InternalServerError';
+import {ErrorEvent}            from './Event/ErrorEvent';
+import {RenderTemplateEvent}   from './Event/RenderTemplateEvent';
+import {RequestEvent}          from './Event/RequestEvent';
+import {ResponseEvent}         from './Event/ResponseEvent';
+import {StaticRequestEvent}    from './Event/StaticRequestEvent';
+import {StaticResponseEvent}   from './Event/StaticResponseEvent';
+import {UpgradeEvent}          from './Event/UpgradeEvent';
+import {InternalServerError}   from './Exception/InternalServerError';
 import {NotFoundError}       from './Exception/NotFoundError';
 import {HarmonyErrorPage}    from './Page/HarmonyErrorPage';
 import {Request}             from './Request/Request';
@@ -152,6 +153,12 @@ export class Harmony
             // trying to read data from the socket.
 
             /* NO-OP */
+        });
+
+        this.server.on('connection', (sock: net.Socket) => {
+            sock.on('error', () => {
+                /* NO-OP */
+            });
         });
 
         // Handle upgrade events.
