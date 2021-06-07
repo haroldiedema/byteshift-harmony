@@ -192,6 +192,16 @@ export class Request
     }
 
     /**
+     * Returns the raw request body as a buffer.
+     *
+     * @returns {string}
+     */
+    public get body(): Buffer
+    {
+        return this._body
+    }
+
+    /**
      * Returns true if the given route matches this request.
      *
      * @param {IRoute} route

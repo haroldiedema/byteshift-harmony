@@ -91,6 +91,12 @@ export declare class Request {
      */
     get json(): any;
     /**
+     * Returns the raw request body as a buffer.
+     *
+     * @returns {string}
+     */
+    get body(): Buffer;
+    /**
      * Returns true if the given route matches this request.
      *
      * @param {IRoute} route
