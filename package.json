@@ -1,9 +1,10 @@
 {
   "name": "@byteshift/harmony",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "A component based HTTP server micro-framework",
   "author": "Harold Iedema <harold@iedema.me>",
   "devDependencies": {
+    "@types/node": "^16.3.0",
     "@rollup/plugin-alias": "^3.1.2",
     "@rollup/plugin-commonjs": "^17.1.0",
     "@rollup/plugin-node-resolve": "^11.1.1",

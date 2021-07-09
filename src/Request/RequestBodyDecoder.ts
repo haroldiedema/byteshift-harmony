@@ -77,7 +77,6 @@ export class RequestBodyDecoder
         } catch (e) {
             res.writeHead(413);
             res.end();
-            throw new Error('Upload size too big.');
         }
     }
 
