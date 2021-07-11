@@ -26,13 +26,13 @@ export class RequestBodyDecoder
     public async decode(req: IncomingMessage, res: ServerResponse): Promise<RequestBody>
     {
         const body = await this.getRequestBody(req, res);
-        const type = (req.headers['content-type'] || '').toLowerCase();
+        const type = (req.headers['content-type'] || '');
 
-        if (type.startsWith('multipart/form-data')) {
+        if (type.toLowerCase().startsWith('multipart/form-data')) {
             return this.parseMultipartFormData(res, type, body);
         }
 
-        if (type.startsWith('application/x-www-form-urlencoded')) {
+        if (type.toLowerCase().startsWith('application/x-www-form-urlencoded')) {
             return this.parseFormUrlEncoded(res, body);
         }
 
