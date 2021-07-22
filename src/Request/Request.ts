@@ -6,6 +6,7 @@
  */
 'use strict';
 
+import {TLSSocket}       from 'tls';
 import {Bag}             from '../Bag';
 import {IRoute}          from '../Router/Router';
 import {IncomingMessage} from 'http';
@@ -30,6 +31,7 @@ export class Request
     private readonly _post: Bag<string | string[]>;
     private readonly _files: Bag<IUploadedFile | IUploadedFile[]>;
     private readonly _body: Buffer;
+    private readonly _isSecure: boolean;
 
     public constructor(private r: IncomingMessage, body: RequestBody)
     {
@@ -49,6 +51,7 @@ export class Request
         this._post       = body.fields;
         this._files      = body.files;
         this._body       = body.raw;
+        this._isSecure   = (r.socket instanceof TLSSocket) && r.socket.encrypted;
     }
 
     /**
@@ -95,6 +98,17 @@ export class Request
     public get clientIp(): string
     {
         return this._clientIp;
+    }
+
+    /**
+     * Returns true if the incoming request came from a secure (HTTPS/TLS)
+     * connection.
+     *
+     * @returns {boolean}
+     */
+    public get isSecure(): boolean
+    {
+        return this._isSecure;
     }
 
     /**

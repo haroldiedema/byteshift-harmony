@@ -16,6 +16,7 @@ export declare class Request {
     private readonly _post;
     private readonly _files;
     private readonly _body;
+    private readonly _isSecure;
     constructor(r: IncomingMessage, body: RequestBody);
     /**
      * Returns a value from one of the available bags in the following order:
@@ -36,6 +37,13 @@ export declare class Request {
      * @return {string}
      */
     get clientIp(): string;
+    /**
+     * Returns true if the incoming request came from a secure (HTTPS/TLS)
+     * connection.
+     *
+     * @returns {boolean}
+     */
+    get isSecure(): boolean;
     /**
      * Returns the request path.
      *

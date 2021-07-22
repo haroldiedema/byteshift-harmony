@@ -96,7 +96,6 @@ export class RequestBodyDecoder
         let body: Buffer[] = [],
             size: number   = 0;
 
-
         return new Promise((resolve, reject) => {
             req.on('data', (chunk) => {
                 size += chunk.length;
