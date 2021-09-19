@@ -31,7 +31,11 @@ export class SessionManager
      */
     public onRequest(event: RequestEvent): void
     {
-        const _id = event.request.cookies.get(this.cookieName);
+        let _id = event.request.cookies.get(this.cookieName);
+        if (!_id) {
+            _id = this.generateSessionId();
+            event.request.cookies.set(this.cookieName, _id);
+        }
         this.sessionData.set(_id, new Session(_id ? this.sessionStorage.get(_id) : '{}'));
         (event as any).session = this.sessionData.get(_id);
     }
@@ -43,7 +47,7 @@ export class SessionManager
      */
     public onResponse(event: ResponseEvent): void
     {
-        const sessionId = event.request.cookies.get(this.cookieName) || this.generateSessionId();
+        const sessionId = event.request.cookies.get(this.cookieName);
         this.sessionStorage.set(sessionId, this.sessionData.get(sessionId).toString());
 
         event.response.cookies.set(this.cookieName, sessionId, 0);
