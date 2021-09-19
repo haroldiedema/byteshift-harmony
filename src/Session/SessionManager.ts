@@ -18,7 +18,7 @@ import {ISessionStorage} from './ISessionStorage';
  */
 export class SessionManager
 {
-    private sessionData: Map<Request, Session> = new Map();
+    private sessionData: Map<string, Session> = new Map();
 
     public constructor(private sessionStorage: ISessionStorage, private cookieName: string)
     {
@@ -32,8 +32,8 @@ export class SessionManager
     public onRequest(event: RequestEvent): void
     {
         const _id = event.request.cookies.get(this.cookieName);
-        this.sessionData.set(event.request, new Session(_id ? this.sessionStorage.get(_id) : '{}'));
-        (event as any).session = this.sessionData.get(event.request);
+        this.sessionData.set(_id, new Session(_id ? this.sessionStorage.get(_id) : '{}'));
+        (event as any).session = this.sessionData.get(_id);
     }
 
     /**
@@ -44,7 +44,7 @@ export class SessionManager
     public onResponse(event: ResponseEvent): void
     {
         const sessionId = event.request.cookies.get(this.cookieName) || this.generateSessionId();
-        this.sessionStorage.set(sessionId, this.sessionData.get(event.request).toString());
+        this.sessionStorage.set(sessionId, this.sessionData.get(sessionId).toString());
 
         event.response.cookies.set(this.cookieName, sessionId, 0);
     }
@@ -57,7 +57,11 @@ export class SessionManager
      */
     public getSessionByRequest(request: Request): Session
     {
-        return this.sessionData.get(request);
+        const _id = request.cookies.get(this.cookieName);
+        if (!_id) {
+            return undefined;
+        }
+        return this.sessionData.get(_id);
     }
 
     /**
@@ -68,6 +72,10 @@ export class SessionManager
      */
     private generateSessionId(): string
     {
-        return [...Array(64)].map(_ => (~~(Math.random() * 36)).toString(36)).join('');
+        const generatedSessionId = [...Array(64)].map(_ => (~~(Math.random() * 36)).toString(36)).join('');
+        if (this.sessionData.has(generatedSessionId)) {
+            return this.generateSessionId();
+        }
+        return generatedSessionId;
     }
 }
