@@ -100,6 +100,13 @@ export class Response
      */
     public send(response: ServerResponse): void
     {
+        // Abort if the native response was already sent. This will occur
+        // solely when an error is triggered that has been internally caught.
+        if (response.headersSent) {
+            this._isSent = true;
+            return;
+        }
+
         if (this._isSent) {
             throw new Error('This response was already sent.');
         }
