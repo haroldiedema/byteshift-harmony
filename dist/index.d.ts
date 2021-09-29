@@ -11,6 +11,7 @@ export * from './Event/RequestEvent';
 export * from './Event/ResponseEvent';
 export * from './Event/StaticRequestEvent';
 export * from './Event/StaticResponseEvent';
+export * from './Event/UpgradeEvent';
 export * from './Request/Request';
 export * from './Response/HtmlResponse';
 export * from './Response/JsonResponse';
