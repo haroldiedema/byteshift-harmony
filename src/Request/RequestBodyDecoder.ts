@@ -104,7 +104,7 @@ export class RequestBodyDecoder
                     res.writeHead(413);
                     res.end();
                     req.socket.destroy();
-                    throw new Error('Upload size too big.');
+                    reject('Upload size too big.');
                 }
 
                 body.push(chunk);

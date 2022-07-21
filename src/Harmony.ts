@@ -6,32 +6,36 @@
  */
 'use strict';
 
-import http, {IncomingMessage} from 'http';
-import https                   from 'https';
-import * as net                from 'net';
-import {Socket}                from 'net';
-import tls                     from 'tls';
-import {ErrorEvent}            from './Event/ErrorEvent';
-import {RenderTemplateEvent}   from './Event/RenderTemplateEvent';
-import {RequestEvent}          from './Event/RequestEvent';
-import {ResponseEvent}         from './Event/ResponseEvent';
-import {StaticRequestEvent}    from './Event/StaticRequestEvent';
-import {StaticResponseEvent}   from './Event/StaticResponseEvent';
-import {UpgradeEvent}          from './Event/UpgradeEvent';
-import {InternalServerError}   from './Exception/InternalServerError';
-import {NotFoundError}       from './Exception/NotFoundError';
-import {HarmonyErrorPage}    from './Page/HarmonyErrorPage';
-import {Request}             from './Request/Request';
-import {RequestBody}         from './Request/RequestBody';
-import {RequestBodyDecoder}  from './Request/RequestBodyDecoder';
-import {Response}            from './Response/Response';
-import {IRoute, Router}      from './Router/Router';
-import {InMemoryStorage}     from './Session/InMemoryStorage';
-import {ISessionStorage}     from './Session/ISessionStorage';
-import {Session}             from './Session/Session';
-import {SessionManager}      from './Session/SessionManager';
-import {StaticAssetHandler}  from './StaticAssetHandler';
-import {TemplateManager}     from './Templating/TemplateManager';
+import http, {IncomingMessage}                  from 'http';
+import https                                    from 'https';
+import * as net                                 from 'net';
+import {Socket}                                 from 'net';
+import tls                                      from 'tls';
+import {ErrorEvent}                             from './Event/ErrorEvent';
+import {RenderTemplateEvent}                    from './Event/RenderTemplateEvent';
+import {RequestEvent}                           from './Event/RequestEvent';
+import {ResponseEvent}                          from './Event/ResponseEvent';
+import {StaticRequestEvent}                     from './Event/StaticRequestEvent';
+import {StaticResponseEvent}                    from './Event/StaticResponseEvent';
+import {UpgradeEvent}                           from './Event/UpgradeEvent';
+import {InternalServerError}                    from './Exception/InternalServerError';
+import {NotFoundError}                          from './Exception/NotFoundError';
+import {HarmonyErrorPage}                       from './Page/HarmonyErrorPage';
+import {Profile}                                from './Profiler/Profile';
+import {Profiler}                               from './Profiler/Profiler';
+import {ProfilerController}                     from './Profiler/ProfilerController';
+import {Request}                                from './Request/Request';
+import {RequestBody}                            from './Request/RequestBody';
+import {RequestBodyDecoder}                     from './Request/RequestBodyDecoder';
+import {Response}                               from './Response/Response';
+import {IRoute, Router}                         from './Router/Router';
+import {InMemoryStorage}                        from './Session/InMemoryStorage';
+import {ISessionStorage}                        from './Session/ISessionStorage';
+import {Session}                                from './Session/Session';
+import {SessionManager}                         from './Session/SessionManager';
+import {HarmonyElementFactory, HarmonyElements} from './SSR/Elements';
+import {StaticAssetHandler}                     from './StaticAssetHandler';
+import {TemplateManager}                        from './Templating/TemplateManager';
 
 export class Harmony
 {
@@ -41,20 +45,21 @@ export class Harmony
     private readonly sessionManager: SessionManager;
     private readonly staticAssetHandler: StaticAssetHandler;
     private readonly templateManager: TemplateManager;
+    private readonly profiler: Profiler;
 
-    private errorEventListeners: ErrorEventListener[]       = [];
-    private requestEventListeners: RequestEventListener[]   = [];
-    private responseEventListeners: ResponseEventListener[] = [];
-    private upgradeEventListeners: UpgradeEventListener[]   = [];
-
+    private errorEventListeners: ErrorEventListener[]                     = [];
+    private requestEventListeners: RequestEventListener[]                 = [];
+    private responseEventListeners: ResponseEventListener[]               = [];
+    private upgradeEventListeners: UpgradeEventListener[]                 = [];
     private typedControllerArguments: Map<any, (request: Request) => any> = new Map();
 
     constructor(private readonly options: IConstructorOptions)
     {
-        this.router = new Router();
-        this.server = options.enableHttps
-                      ? https.createServer(options.httpsOptions, this.handle.bind(this))
-                      : http.createServer(this.handle.bind(this));
+        this.profiler = new Profiler(!!options.enableProfiler);
+        this.router   = new Router();
+        this.server   = options.enableHttps
+                        ? https.createServer(options.httpsOptions, this.handle.bind(this))
+                        : http.createServer(this.handle.bind(this));
 
         this.requestDecoder = new RequestBodyDecoder(options.maxUploadSize || (1048576));
 
@@ -75,6 +80,11 @@ export class Harmony
         // Register controllers.
         if (options.controllers) {
             options.controllers.forEach((controllerClass) => this.registerController(controllerClass));
+        }
+
+        // Register profiler controller if the profiler is enabled.
+        if (options.enableProfiler) {
+            this.registerController(ProfilerController);
         }
 
         // Register event listeners.
@@ -168,7 +178,7 @@ export class Harmony
                 const event   = new UpgradeEvent(
                     request,
                     socket,
-                    this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined
+                    this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined,
                 );
 
                 for (let handler of this.upgradeEventListeners) {
@@ -199,6 +209,25 @@ export class Harmony
     public use(plugin: IHarmonyPlugin): void
     {
         plugin.install(this);
+    }
+
+    /**
+     * Registers a JSX element that can be used throughout any JSX template.
+     * This is the equivalent of {@link customElements.define} but for SSR
+     * rendering in Harmony.
+     *
+     * Note that these elements are rendered server-side and therefore provide
+     * no reactivity functionality.
+     *
+     * @param {string} tagName
+     * @param {HarmonyElementFactory} factory
+     * @returns {this}
+     */
+    public registerElement(tagName: string, factory: HarmonyElementFactory): this
+    {
+        HarmonyElements.factories.set(tagName, factory);
+
+        return this;
     }
 
     /**
@@ -236,7 +265,7 @@ export class Harmony
      */
     public getSessionByRequest(request: Request): Session
     {
-        if (! this.sessionManager) {
+        if (!this.sessionManager) {
             throw new Error('Session management is disabled.');
         }
 
@@ -290,7 +319,8 @@ export class Harmony
     public registerUpgradeEventListener(
         callback: (e: UpgradeEvent) => boolean | void | Promise<boolean> | Promise<void>,
         priority: number = 0,
-    ) {
+    )
+    {
         this.upgradeEventListeners.push({callback: callback, priority: priority});
         this.upgradeEventListeners = this.upgradeEventListeners.sort((a, b) => a.priority > b.priority ? -1 : 1);
     }
@@ -377,16 +407,26 @@ export class Harmony
     {
         let body, request, route;
 
+        const profile = new Profile(req);
+
+        profile.start('Decode request');
+
         try {
             body    = await this.requestDecoder.decode(req, res);
             request = new Request(req, body);
             route   = this.router.findByRequest(request);
+
+            profile.hRequest = request;
+            profile.hRoute   = route;
         } catch (e) {
             // If anything goes wrong during the request build-up phase, the
             // client most likely terminated the connection. Ignore everything
             // at this point and return.
             return;
         }
+
+        profile.stop('Decode request');
+        profile.start('Controller');
 
         let controller;
 
@@ -395,9 +435,13 @@ export class Harmony
                 throw new NotFoundError();
             }
 
-            controller = this.options.serviceContainer
-                         ? this.options.serviceContainer.get(route._controller[0])
-                         : new route._controller[0]();
+            if (route._controller[0] === ProfilerController) {
+                controller = new ProfilerController(this.profiler);
+            } else {
+                controller = this.options.serviceContainer
+                             ? this.options.serviceContainer.get(route._controller[0])
+                             : new route._controller[0]();
+            }
 
             if (typeof controller[route._controller[1]] !== 'function') {
                 throw new InternalServerError('Method "' + route._controller[1] + '" is not an accessible method in this controller.');
@@ -407,11 +451,16 @@ export class Harmony
             // for incoming requests before the controller method is fired.
             // This would allow firewall type of functionality to exist, or
             // generic services that serve static content.
-            const requestEvent = new RequestEvent(request, route, this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined);
+            const requestEvent = new RequestEvent(
+                request,
+                route,
+                this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined,
+            );
 
             let stopPropagation = false,
                 response;
 
+            profile.start('Request event handlers');
             for (let listener of this.requestEventListeners) {
                 stopPropagation = false === await listener.callback(requestEvent);
 
@@ -423,12 +472,15 @@ export class Harmony
                     break;
                 }
             }
+            profile.stop('Request event handlers');
 
             // Only handle the controller action if a request listener did not
             // send a response yet.
             if (!response) {
                 // Handle the actual controller method.
-                response = await this.handleControllerAction(controller, route._controller[1], route, request);
+                response = await this.handleControllerAction(controller, route._controller[1], route, request, profile);
+
+                profile.start('Handle controller response');
 
                 // A controller method must return a Response object, unless it
                 // is annotated with the @Template decorator.
@@ -443,17 +495,29 @@ export class Harmony
                         );
                     }
 
+                    profile.stop('Handle controller response');
+
                     // Do we have a response now?
                     if (!(response instanceof Response)) {
                         throw new InternalServerError('Method "' + route._controller[1] + '" did not return a Response object.');
                     }
                 }
+
+                profile.stop('Handle controller response');
             }
+
+            profile.hResponse = response;
 
             // Fire the 'response' event to allow external services to modify
             // the returned response. For example, setting specific cookies or
             // other headers.
-            const responseEvent = new ResponseEvent(request, route, response, this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined);
+            profile.start('Response event handlers');
+            const responseEvent = new ResponseEvent(
+                request,
+                route,
+                response,
+                this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined,
+            );
             for (let listener of this.responseEventListeners) {
                 if (false === listener.callback(responseEvent)) {
                     break;
@@ -461,9 +525,13 @@ export class Harmony
             }
 
             if (!response.isSent) {
+                profile.hResponse = response;
                 response.send(res);
             }
+            profile.stop('Response event handlers');
         } catch (e: any) {
+            profile.stop('Controller');
+            profile.start('Handle error');
             // Fire the 'error' event to allow external services to listen act
             // on certain types of errors, for example rendering a custom 404
             // or 500 page.
@@ -480,15 +548,22 @@ export class Harmony
 
                     if (false === response.isSent) {
                         response.send(res);
-                        hasSentResponse = true;
+                        hasSentResponse   = true;
+                        profile.hResponse = response;
                     }
                 }
 
                 // Stop propagating if the listener returned false explicitly.
                 if (stopPropagation) {
-                    return;
+                    break;
                 }
             }
+
+            profile.stop('Handle error');
+        }
+
+        if (! (route && route._controller[0] === ProfilerController)) {
+            this.profiler.save(profile);
         }
     }
 
@@ -499,6 +574,7 @@ export class Harmony
      * @param {string} method
      * @param {IRoute} route
      * @param {Request} request
+     * @param {Profile} profile
      * @returns {Promise<Response>}
      * @private
      */
@@ -507,12 +583,14 @@ export class Harmony
         method: string,
         route: IRoute,
         request: Request,
+        profile: Profile,
     ): Promise<Response>
     {
         const fn: Function     = controller[method];
         const args: any[]      = [];
         const params: string[] = Object.values<string>(request.parameters.all);
 
+        profile.start('Resolve controller method arguments');
         const typedArguments = new Map<any, (request: Request) => any>();
         typedArguments.set(Request, (r: Request) => r);
         typedArguments.set(Session, (r: Request) => {
@@ -536,8 +614,13 @@ export class Harmony
                 args.push(params[i]);
             }
         }
+        profile.stop('Resolve controller method arguments');
 
-        return await fn.bind(controller)(...args);
+        profile.start('Invoke controller method');
+        const response = await fn.bind(controller)(...args);
+        profile.stop('Invoke controller method');
+
+        return response;
     }
 }
 
@@ -651,6 +734,17 @@ export interface IConstructorOptions
     }
 
     /**
+     * Enables the profiler.
+     *
+     * The profiler measures timings for every step during a single request and
+     * stores it temporarily in memory. A maximum of 50 profiles are being kept
+     * at all times.
+     *
+     * Profiles can be accessed from the browser at the "/_profiler" route.
+     */
+    enableProfiler?: boolean;
+
+    /**
      * Whether to use an HTTPS server rather than HTTP.
      * Use the 'sslOptions' object to pass options to the HTTP server like SSL
      * certificate files, etc.
@@ -668,7 +762,7 @@ export interface IConstructorOptions
      * SNI (Server Name Identification) configuration used for serving multiple
      * domains over HTTPS with different certificates.
      */
-    sni?: {[hostname: string]: tls.SecureContextOptions};
+    sni?: { [hostname: string]: tls.SecureContextOptions };
 
     /**
      * A service container to pull controller classes from.

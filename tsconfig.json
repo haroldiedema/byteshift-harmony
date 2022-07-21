@@ -11,7 +11,9 @@
     "esModuleInterop": true,
     "allowJs": true,
     "strict": false,
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "jsx": "react",
+    "jsxFactory": "h"
   },
   "include": [
     "src/**/*"

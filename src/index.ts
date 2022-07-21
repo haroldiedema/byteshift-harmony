@@ -31,3 +31,7 @@ export * from './Harmony';
 export * from './Session/Session';
 export * from './Session/ISessionStorage';
 export * from './Templating/Template';
+export {HarmonyElementFactory} from './SSR/Elements';
+export * from './SSR/Node';
+export * from './SSR/Renderer';
+export * from './JSX';

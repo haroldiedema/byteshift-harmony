@@ -1,4 +1,5 @@
 /// <reference types="node" />
+/// <reference types="node" />
 import http from 'http';
 import tls from 'tls';
 import { ErrorEvent } from './Event/ErrorEvent';
@@ -11,6 +12,7 @@ import { UpgradeEvent } from './Event/UpgradeEvent';
 import { Request } from './Request/Request';
 import { ISessionStorage } from './Session/ISessionStorage';
 import { Session } from './Session/Session';
+import { HarmonyElementFactory } from './SSR/Elements';
 export declare class Harmony {
     private readonly options;
     private readonly router;
@@ -19,6 +21,7 @@ export declare class Harmony {
     private readonly sessionManager;
     private readonly staticAssetHandler;
     private readonly templateManager;
+    private readonly profiler;
     private errorEventListeners;
     private requestEventListeners;
     private responseEventListeners;
@@ -35,6 +38,19 @@ export declare class Harmony {
      * @param {IHarmonyPlugin} plugin
      */
     use(plugin: IHarmonyPlugin): void;
+    /**
+     * Registers a JSX element that can be used throughout any JSX template.
+     * This is the equivalent of {@link customElements.define} but for SSR
+     * rendering in Harmony.
+     *
+     * Note that these elements are rendered server-side and therefore provide
+     * no reactivity functionality.
+     *
+     * @param {string} tagName
+     * @param {HarmonyElementFactory} factory
+     * @returns {this}
+     */
+    registerElement(tagName: string, factory: HarmonyElementFactory): this;
     /**
      * Returns the HTTP(s) server of this Harmony instance.
      *
@@ -118,6 +134,7 @@ export declare class Harmony {
      * @param {string} method
      * @param {IRoute} route
      * @param {Request} request
+     * @param {Profile} profile
      * @returns {Promise<Response>}
      * @private
      */
@@ -219,6 +236,16 @@ export interface IConstructorOptions {
          */
         cookieName?: string;
     };
+    /**
+     * Enables the profiler.
+     *
+     * The profiler measures timings for every step during a single request and
+     * stores it temporarily in memory. A maximum of 50 profiles are being kept
+     * at all times.
+     *
+     * Profiles can be accessed from the browser at the "/_profiler" route.
+     */
+    enableProfiler?: boolean;
     /**
      * Whether to use an HTTPS server rather than HTTP.
      * Use the 'sslOptions' object to pass options to the HTTP server like SSL

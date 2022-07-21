@@ -6,17 +6,13 @@
  */
 'use strict';
 
-import {Node}                 from '../SSR/Node';
-import {HttpStatus, Response} from './Response';
+import {Node} from './Node';
 
-export class HtmlResponse extends Response
-{
-    constructor(html: string|Node, statusCode: HttpStatus = HttpStatus.OK)
-    {
-        if (html instanceof Node) {
-            html = html.render();
-        }
+/**
+ * Returns a custom HTML element suitable for SSR.
+ */
+export type HarmonyElementFactory = (attributes: { [name: string]: any }, html: string) => string|Node;
 
-        super(html, statusCode, 'text/html');
-    }
-}
+export const HarmonyElements = {
+    factories: new Map<string, HarmonyElementFactory>(),
+};

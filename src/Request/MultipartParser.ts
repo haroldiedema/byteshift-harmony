@@ -1,15 +1,3 @@
-/**
- * Multipart Parser (Finite State Machine)
- * usage:
- * const multipart = require('./multipart.js');
- * const body = multipart.DemoData();                               // raw body
- * const body = new Buffer(event['body-json'].toString(),'base64'); // AWS case
- * const boundary = multipart.getBoundary(event.params.header['content-type']);
- * const parts = multipart.Parse(body,boundary);
- * each part is:
- * { filename: 'A.txt', type: 'text/plain', data: <Buffer 41 41 41 41 42 42 42 42> }
- *  or { name: 'key', data: <Buffer 41 41 41 41 42 42 42 42> }
- */
 
 type Part = {
     header: string
@@ -101,15 +89,17 @@ export function parse(multipartBodyBuffer: Buffer, boundary: string): Input[]
 export function getBoundary(header: string): string
 {
     const items = header.split(';');
+
     if (items) {
         for (let i = 0; i < items.length; i++) {
-            const item = new String(items[i]).trim();
+            const item = String(items[i]).trim();
             if (item.indexOf('boundary') >= 0) {
                 const k = item.split('=');
-                return new String(k[1]).trim();
+                return String(k[1]).trim();
             }
         }
     }
+
     return '';
 }
 
@@ -139,6 +129,7 @@ function process(part: Part): Input
 
     const filenameData = header[2];
     let input          = {};
+
     if (filenameData) {
         input             = obj(filenameData);
         const contentType = part.info.split(':')[1].trim();
@@ -163,5 +154,6 @@ function process(part: Part): Input
         enumerable:   true,
         configurable: true
     })
+
     return input as Input
 }
