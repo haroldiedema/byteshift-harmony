@@ -2876,7 +2876,6 @@ class Harmony {
                         const session = this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined;
                         response = await this.templateManager.render(request, session, controller.__TEMPLATES__[route._controller[1]], response);
                     }
-                    profile.stop('Handle controller response');
                     // Do we have a response now?
                     if (!(response instanceof Response)) {
                         throw new InternalServerError('Method "' + route._controller[1] + '" did not return a Response object.');

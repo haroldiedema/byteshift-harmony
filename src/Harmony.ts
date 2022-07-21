@@ -495,8 +495,6 @@ export class Harmony
                         );
                     }
 
-                    profile.stop('Handle controller response');
-
                     // Do we have a response now?
                     if (!(response instanceof Response)) {
                         throw new InternalServerError('Method "' + route._controller[1] + '" did not return a Response object.');
