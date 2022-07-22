@@ -27,7 +27,7 @@ import {ProfilerController}                     from './Profiler/ProfilerControl
 import {Request}                                from './Request/Request';
 import {RequestBody}                            from './Request/RequestBody';
 import {RequestBodyDecoder}                     from './Request/RequestBodyDecoder';
-import {Response}                               from './Response/Response';
+import {HttpStatus, Response}                   from './Response/Response';
 import {IRoute, Router}                         from './Router/Router';
 import {InMemoryStorage}                        from './Session/InMemoryStorage';
 import {ISessionStorage}                        from './Session/ISessionStorage';
@@ -55,7 +55,7 @@ export class Harmony
 
     constructor(private readonly options: IConstructorOptions)
     {
-        this.profiler = new Profiler(!!options.enableProfiler);
+        this.profiler = new Profiler(!!options.profiler?.enabled);
         this.router   = new Router();
         this.server   = options.enableHttps
                         ? https.createServer(options.httpsOptions, this.handle.bind(this))
@@ -83,8 +83,17 @@ export class Harmony
         }
 
         // Register profiler controller if the profiler is enabled.
-        if (options.enableProfiler) {
+        if (options.profiler?.enabled) {
             this.registerController(ProfilerController);
+        }
+
+        // Register a firewall event listener for the firewall.
+        if (typeof options.profiler?.firewall === 'function') {
+            this.registerRequestEventListener(async (e: RequestEvent) => {
+                if (e.route._controller[0] === ProfilerController && !await options.profiler.firewall(e)) {
+                    e.setResponse(new Response('', HttpStatus.UNAUTHORIZED));
+                }
+            });
         }
 
         // Register event listeners.
@@ -174,7 +183,7 @@ export class Harmony
         // Handle upgrade events.
         this.server.on('upgrade', (message: IncomingMessage, socket: Socket) => {
             try {
-                const request = new Request(message, new RequestBody(Buffer.from(''), []));
+                const request = new Request(message, new RequestBody(Buffer.from(''), []), new Profile(message));
                 const event   = new UpgradeEvent(
                     request,
                     socket,
@@ -413,7 +422,7 @@ export class Harmony
 
         try {
             body    = await this.requestDecoder.decode(req, res);
-            request = new Request(req, body);
+            request = new Request(req, body, profile);
             route   = this.router.findByRequest(request);
 
             profile.hRequest = request;
@@ -504,6 +513,7 @@ export class Harmony
                 profile.stop('Handle controller response');
             }
 
+            profile.stop('Controller');
             profile.hResponse = response;
 
             // Fire the 'response' event to allow external services to modify
@@ -560,7 +570,7 @@ export class Harmony
             profile.stop('Handle error');
         }
 
-        if (! (route && route._controller[0] === ProfilerController)) {
+        if (!(route && route._controller[0] === ProfilerController)) {
             this.profiler.save(profile);
         }
     }
@@ -731,16 +741,33 @@ export interface IConstructorOptions
         cookieName?: string;
     }
 
-    /**
-     * Enables the profiler.
-     *
-     * The profiler measures timings for every step during a single request and
-     * stores it temporarily in memory. A maximum of 50 profiles are being kept
-     * at all times.
-     *
-     * Profiles can be accessed from the browser at the "/_profiler" route.
-     */
-    enableProfiler?: boolean;
+    profiler?: {
+        /**
+         * Enables the profiler.
+         *
+         * The profiler measures timings for every step during a single request
+         * and stores it temporarily in memory.
+         *
+         * Profiles can be accessed from the browser at the "/_profiler" route.
+         */
+        enabled?: boolean;
+
+        /**
+         * A callback function that validates the incoming request.
+         *
+         * Returns true if the user making the request has access to the
+         * profiler, false otherwise.
+         *
+         * @param {RequestEvent} event
+         * @returns {Promise<boolean>}
+         */
+        firewall?: (event: RequestEvent) => Promise<boolean>;
+
+        /**
+         * The maximum amount of profiles to keep in memory at all times.
+         */
+        maxProfiles?: number;
+    }
 
     /**
      * Whether to use an HTTPS server rather than HTTP.

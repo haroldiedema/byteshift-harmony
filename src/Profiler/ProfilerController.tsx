@@ -72,7 +72,9 @@ export class ProfilerController
                             <td class="value">{profile.hRoute?._controller[0].name ?? '-'}.{profile.hRoute?._controller[1]}</td>
                         </tr>
 
-                        <tr><td colSpan={2} class="table-header">Request headers</td></tr>
+                        <tr>
+                            <td colSpan={2} class="table-header">Request headers</td>
+                        </tr>
                         {Object.keys(profile.hRequest?.headers.all ?? {}).map(name => {
                             return (
                                 <tr>
@@ -83,7 +85,9 @@ export class ProfilerController
                         })}
 
                         {profile.hRequest?.query.size > 0 ? ([
-                            <tr><td colSpan={2} class="table-header">Query parameters</td></tr>,
+                            <tr>
+                                <td colSpan={2} class="table-header">Query parameters</td>
+                            </tr>,
                             ...Object.keys(profile.hRequest?.query.all ?? {}).map(name => {
                                 return (
                                     <tr>
@@ -91,11 +95,13 @@ export class ProfilerController
                                         <td class="value">{profile.hRequest.query.get(name)}</td>
                                     </tr>
                                 );
-                            })
+                            }),
                         ]) : null}
 
                         {profile.hRequest?.post.size > 0 ? ([
-                            <tr><td colSpan={2} class="table-header">Post fields</td></tr>,
+                            <tr>
+                                <td colSpan={2} class="table-header">Post fields</td>
+                            </tr>,
                             ...Object.keys(profile.hRequest?.post.all ?? {}).map(name => {
                                 return (
                                     <tr>
@@ -103,11 +109,13 @@ export class ProfilerController
                                         <td class="value">{profile.hRequest.post.get(name)}</td>
                                     </tr>
                                 );
-                            })
+                            }),
                         ]) : null}
 
                         {profile.hRequest?.cookies.size > 0 ? ([
-                            <tr><td colSpan={2} class="table-header">Cookies</td></tr>,
+                            <tr>
+                                <td colSpan={2} class="table-header">Cookies</td>
+                            </tr>,
                             ...Object.keys(profile.hRequest?.cookies.all ?? {}).map(name => {
                                 return (
                                     <tr>
@@ -115,11 +123,13 @@ export class ProfilerController
                                         <td class="value">{profile.hRequest.cookies.get(name)}</td>
                                     </tr>
                                 );
-                            })
+                            }),
                         ]) : null}
 
                         {profile.files.length > 0 ? ([
-                            <tr><td colSpan={2} class="table-header">Uploaded files</td></tr>,
+                            <tr>
+                                <td colSpan={2} class="table-header">Uploaded files</td>
+                            </tr>,
                             ...profile.files.map(file => {
                                 return (
                                     <tr>
@@ -152,9 +162,19 @@ export class ProfilerController
                                         </td>
                                     </tr>
                                 );
-                            })
+                            }),
                         ]) : null}
 
+                        {this.isViewableRequestBody(profile) ? ([
+                            <tr>
+                                <td class="table-header" colSpan={2}>Request body (text only)</td>
+                            </tr>,
+                            <tr>
+                                <td colSpan={2}>
+                                    <pre>{this.htmlEntities(profile.hRequest.body.toString('utf-8'))}</pre>
+                                </td>
+                            </tr>,
+                        ]) : null}
                     </tbody>
                 </table>
                 <h2>Response</h2>
@@ -173,7 +193,9 @@ export class ProfilerController
                             <td class="value">{profile.hResponse?.content.length ?? 'N/A'}</td>
                         </tr>
                         {profile.hResponse?.headers.size > 0 ? ([
-                            <tr><td colSpan={2} class="table-header">Response headers</td></tr>,
+                            <tr>
+                                <td colSpan={2} class="table-header">Response headers</td>
+                            </tr>,
                             ...Object.keys(profile.hResponse?.headers.all ?? {}).map(name => {
                                 return (
                                     <tr>
@@ -181,12 +203,62 @@ export class ProfilerController
                                         <td class="value">{profile.hResponse?.headers.get(name)}</td>
                                     </tr>
                                 );
-                            })
+                            }),
+                        ]) : null}
+                        {this.isViewableResponseBody(profile) ? ([
+                            <tr>
+                                <td class="table-header" colSpan={2}>Response body</td>
+                            </tr>,
+                            <tr>
+                                <td colSpan={2}>
+                                    <pre>{this.getViewableResponseBody(profile)}</pre>
+                                </td>
+                            </tr>,
                         ]) : null}
                     </tbody>
                 </table>
             </div>
         ), id));
+    }
+
+    private isViewableRequestBody(profile: Profile): boolean
+    {
+        const contentType = profile.hRequest?.headers.get('content-type') ?? '';
+
+        return (
+            contentType.indexOf('json') !== -1 ||
+            contentType.indexOf('text') !== -1 ||
+            contentType.indexOf('xml') !== -1
+        ) && profile.hRequest?.body.length > 0;
+    }
+
+    private isViewableResponseBody(profile: Profile): boolean
+    {
+        const contentType = profile.hResponse?.headers.get('content-type') ?? '';
+
+        return (
+            contentType.indexOf('json') !== -1 ||
+            contentType.indexOf('text') !== -1 ||
+            contentType.indexOf('xml') !== -1
+        ) && profile.hResponse?.content.length > 0;
+    }
+
+    private getViewableResponseBody(profile: Profile): string
+    {
+        let content = profile.hResponse.content;
+
+        if (content instanceof Buffer) {
+            content = content.toString('utf8');
+        }
+
+        return this.htmlEntities(content);
+    }
+
+    private htmlEntities(str: string): string
+    {
+        return str.replace(/[\u00A0-\u9999<>\&]/g, (i) => {
+            return '&#' + i.charCodeAt(0) + ';';
+        });
     }
 
     /**
@@ -246,7 +318,9 @@ export class ProfilerController
             });
         }
 
-        return result;
+        return result.sort((a, b) => {
+            return a.x < b.x ? -1 : 1;
+        });
     }
 
     /**
@@ -507,6 +581,10 @@ export class ProfilerController
         }
         table table {
             margin: 0;
+        }
+        pre {
+            padding: 4px;
+            word-break: break-all;
         }
         `;
     }

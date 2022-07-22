@@ -624,6 +624,114 @@ class UpgradeEvent {
  * (C)2020, Harold Iedema <harold@iedema.me>                                      |_.__/\_, |\__\___/___/_//_/_/_/ \__/
  * See LICENSE for licensing information                                                |__/             H A R M O N Y
  */
+class Profile {
+    request;
+    id;
+    name;
+    createdAt = new Date();
+    timings = new Map();
+    hRequest;
+    hRoute;
+    hResponse;
+    activeMeasurements = new Map();
+    constructor(request) {
+        this.request = request;
+        this.id = `h${[...Array(8)].map(() => (~~(Math.random() * 36)).toString(36)).join('')}`;
+        this.name = request.url;
+    }
+    /**
+     * Returns the response HTTP status code.
+     *
+     * @returns {number}
+     */
+    get statusCode() {
+        return this.hResponse?.statusCode ?? 0;
+    }
+    /**
+     * Returns a list of uploaded files, indexed by POST field name.
+     *
+     * @returns {{fieldName: string, files: IUploadedFile[]}[]}
+     */
+    get files() {
+        if (!this.hRequest || this.hRequest.files.size === 0) {
+            return [];
+        }
+        const result = [];
+        Object.keys(this.hRequest.files.all).forEach((fieldName) => {
+            let files = this.hRequest.files.get(fieldName);
+            if (!Array.isArray(files)) {
+                files = [files];
+            }
+            result.push({ fieldName: fieldName, files: files });
+        });
+        return result;
+    }
+    /**
+     * Starts measuring the time of an event with the given name.
+     *
+     * Call {@link Profile.stop} to calculate the time needed for this event
+     * and store it.
+     *
+     * @param {string} name
+     */
+    start(name) {
+        this.activeMeasurements.set(name, this.getHrTime());
+    }
+    /**
+     * Stops the time measurement of the event with the given name and stores
+     * the result in this profile.
+     *
+     * @param {string} name
+     */
+    stop(name) {
+        if (!this.activeMeasurements.has(name)) {
+            return;
+        }
+        this.timings.set(name, {
+            name: name,
+            startedAt: this.activeMeasurements.get(name),
+            time: this.getHrTime() - this.activeMeasurements.get(name),
+        });
+        this.activeMeasurements.delete(name);
+    }
+    /**
+     * Returns the total time of every event captured in this profile.
+     *
+     * @returns {number}
+     */
+    get totalTime() {
+        let total = 0;
+        for (const timing of this.timing) {
+            total += timing.time;
+        }
+        return total;
+    }
+    /**
+     * Returns timing information captured in this profile.
+     *
+     * @returns {Timing[]}
+     */
+    get timing() {
+        return Array.from(this.timings.values());
+    }
+    /**
+     * Returns the current time in microseconds.
+     *
+     * @returns {number}
+     * @private
+     */
+    getHrTime() {
+        const hrTime = process.hrtime();
+        return hrTime[0] * 1000000 + hrTime[1] / 1000;
+    }
+}
+
+/* Byteshift Harmony                                                               _         _             __   _ _____
+ *    A component-based HTTP server micro-framework                               | |__ _  _| |_ ___  ___ / /  (_) _/ /_
+ *                                                                                | '_ \ || |  _/ -_|(_-</ _ \/ / _/ __/
+ * (C)2020, Harold Iedema <harold@iedema.me>                                      |_.__/\_, |\__\___/___/_//_/_/_/ \__/
+ * See LICENSE for licensing information                                                |__/             H A R M O N Y
+ */
 const optionalParam = /\((.*?)\)/g;
 const namedParam = /(\(\?)?:\w+/g;
 // eslint-disable-next-line no-useless-escape
@@ -642,7 +750,8 @@ class Request {
     _files;
     _body;
     _isSecure;
-    constructor(r, body) {
+    _profile;
+    constructor(r, body, profile = null) {
         this.r = r;
         // const u = url.parse(r.url, true, true);
         const u = new URL(r.url, 'http://localhost/');
@@ -659,6 +768,7 @@ class Request {
         this._files = body.files;
         this._body = body.raw;
         this._isSecure = (r.socket instanceof tls.TLSSocket) && r.socket.encrypted;
+        this._profile = profile;
     }
     /**
      * Returns a value from one of the available bags in the following order:
@@ -692,6 +802,33 @@ class Request {
             return this._query.get(name);
         }
         return undefined;
+    }
+    /**
+     * Starts a profile measurement with the given name.
+     *
+     * Call {@link Request.stopProfileMeasurement} to finalize the measurement
+     * and store it in the profile so it can be seen in the profiler timeline.
+     *
+     * @param {string} name
+     * @returns {this}
+     */
+    startProfileMeasurement(name) {
+        if (this._profile instanceof Profile) {
+            this._profile.start(name);
+        }
+        return this;
+    }
+    /**
+     * Stops the time measurement of the event with the given name.
+     *
+     * @param {string} name
+     * @returns {this}
+     */
+    stopProfileMeasurement(name) {
+        if (this._profile instanceof Profile) {
+            this._profile.stop(name);
+        }
+        return this;
     }
     /**
      * Returns the IP address of the client.
@@ -1265,115 +1402,6 @@ class HarmonyErrorPage {
  * (C)2020, Harold Iedema <harold@iedema.me>                                      |_.__/\_, |\__\___/___/_//_/_/_/ \__/
  * See LICENSE for licensing information                                                |__/             H A R M O N Y
  */
-class Profile {
-    request;
-    id;
-    name;
-    createdAt = new Date();
-    timings = new Map();
-    hRequest;
-    hRoute;
-    hResponse;
-    activeMeasurements = new Map();
-    constructor(request) {
-        this.request = request;
-        this.id = `h${[...Array(8)].map(() => (~~(Math.random() * 36)).toString(36)).join('')}`;
-        this.name = request.url;
-    }
-    /**
-     * Returns the response HTTP status code.
-     *
-     * @returns {number}
-     */
-    get statusCode() {
-        return this.hResponse?.statusCode ?? 0;
-    }
-    /**
-     * Returns a list of uploaded files, indexed by POST field name.
-     *
-     * @returns {{fieldName: string, files: IUploadedFile[]}[]}
-     */
-    get files() {
-        if (!this.hRequest || this.hRequest.files.size === 0) {
-            return [];
-        }
-        const result = [];
-        Object.keys(this.hRequest.files.all).forEach((fieldName) => {
-            let files = this.hRequest.files.get(fieldName);
-            if (!Array.isArray(files)) {
-                files = [files];
-            }
-            result.push({ fieldName: fieldName, files: files });
-        });
-        return result;
-    }
-    /**
-     * Starts measuring the time of an event with the given name.
-     *
-     * Call {@link Profile.stop} to calculate the time needed for this event
-     * and store it.
-     *
-     * @param {string} name
-     */
-    start(name) {
-        this.activeMeasurements.set(name, this.getHrTime());
-    }
-    /**
-     * Stops the time measurement of the event with the given name and stores
-     * the result in this profile.
-     *
-     * @param {string} name
-     */
-    stop(name) {
-        if (!this.activeMeasurements.has(name)) {
-            console.warn(`[PROFILER] There is no event "${name}" being tracked right now.`);
-            return;
-        }
-        this.timings.set(name, {
-            name: name,
-            startedAt: this.activeMeasurements.get(name),
-            time: this.getHrTime() - this.activeMeasurements.get(name),
-        });
-        this.activeMeasurements.delete(name);
-    }
-    /**
-     * Returns the total time of every event captured in this profile.
-     *
-     * @returns {number}
-     */
-    get totalTime() {
-        let total = 0;
-        for (const timing of this.timing) {
-            total += timing.time;
-        }
-        return total;
-    }
-    /**
-     * Returns timing information captured in this profile.
-     *
-     * @returns {Timing[]}
-     */
-    get timing() {
-        return Array.from(this.timings.values());
-    }
-    /**
-     * Returns the current time in microseconds.
-     *
-     * @returns {number}
-     * @private
-     */
-    getHrTime() {
-        const hrTime = process.hrtime();
-        return hrTime[0] * 1000000 + hrTime[1] / 1000;
-    }
-}
-
-/* Byteshift Harmony                                                               _         _             __   _ _____
- *    A component-based HTTP server micro-framework                               | |__ _  _| |_ ___  ___ / /  (_) _/ /_
- *                                                                                | '_ \ || |  _/ -_|(_-</ _ \/ / _/ __/
- * (C)2020, Harold Iedema <harold@iedema.me>                                      |_.__/\_, |\__\___/___/_//_/_/_/ \__/
- * See LICENSE for licensing information                                                |__/             H A R M O N Y
- */
 class Profiler {
     isEnabled;
     profiles = [];
@@ -1514,7 +1542,7 @@ class ProfilerController {
                             return (h("tr", null,
                                 h("td", { class: "label" }, name),
                                 h("td", { class: "value" }, profile.hRequest.query.get(name))));
-                        })
+                        }),
                     ]) : null,
                     profile.hRequest?.post.size > 0 ? ([
                         h("tr", null,
@@ -1523,7 +1551,7 @@ class ProfilerController {
                             return (h("tr", null,
                                 h("td", { class: "label" }, name),
                                 h("td", { class: "value" }, profile.hRequest.post.get(name))));
-                        })
+                        }),
                     ]) : null,
                     profile.hRequest?.cookies.size > 0 ? ([
                         h("tr", null,
@@ -1532,7 +1560,7 @@ class ProfilerController {
                             return (h("tr", null,
                                 h("td", { class: "label" }, name),
                                 h("td", { class: "value" }, profile.hRequest.cookies.get(name))));
-                        })
+                        }),
                     ]) : null,
                     profile.files.length > 0 ? ([
                         h("tr", null,
@@ -1558,7 +1586,14 @@ class ProfilerController {
                                                     h("td", { class: "value" }, uploadedFile.data.length)),
                                             ];
                                         }))))));
-                        })
+                        }),
+                    ]) : null,
+                    this.isViewableRequestBody(profile) ? ([
+                        h("tr", null,
+                            h("td", { class: "table-header", colSpan: 2 }, "Request body (text only)")),
+                        h("tr", null,
+                            h("td", { colSpan: 2 },
+                                h("pre", null, this.htmlEntities(profile.hRequest.body.toString('utf-8'))))),
                     ]) : null)),
             h("h2", null, "Response"),
             h("table", null,
@@ -1579,8 +1614,39 @@ class ProfilerController {
                             return (h("tr", null,
                                 h("td", { class: "label" }, name),
                                 h("td", { class: "value" }, profile.hResponse?.headers.get(name))));
-                        })
+                        }),
+                    ]) : null,
+                    this.isViewableResponseBody(profile) ? ([
+                        h("tr", null,
+                            h("td", { class: "table-header", colSpan: 2 }, "Response body")),
+                        h("tr", null,
+                            h("td", { colSpan: 2 },
+                                h("pre", null, this.getViewableResponseBody(profile)))),
                     ]) : null)))), id));
+    }
+    isViewableRequestBody(profile) {
+        const contentType = profile.hRequest?.headers.get('content-type') ?? '';
+        return (contentType.indexOf('json') !== -1 ||
+            contentType.indexOf('text') !== -1 ||
+            contentType.indexOf('xml') !== -1) && profile.hRequest?.body.length > 0;
+    }
+    isViewableResponseBody(profile) {
+        const contentType = profile.hResponse?.headers.get('content-type') ?? '';
+        return (contentType.indexOf('json') !== -1 ||
+            contentType.indexOf('text') !== -1 ||
+            contentType.indexOf('xml') !== -1) && profile.hResponse?.content.length > 0;
+    }
+    getViewableResponseBody(profile) {
+        let content = profile.hResponse.content;
+        if (content instanceof Buffer) {
+            content = content.toString('utf8');
+        }
+        return this.htmlEntities(content);
+    }
+    htmlEntities(str) {
+        return str.replace(/[\u00A0-\u9999<>\&]/g, (i) => {
+            return '&#' + i.charCodeAt(0) + ';';
+        });
     }
     /**
      * Renders a timeline of the given profile.
@@ -1620,7 +1686,9 @@ class ProfilerController {
                 t: (timing.time / 1000).toFixed(3) + 'ms',
             });
         }
-        return result;
+        return result.sort((a, b) => {
+            return a.x < b.x ? -1 : 1;
+        });
     }
     /**
      * Converts the scale of {value} from {r1} to {r2}.
@@ -1867,6 +1935,10 @@ class ProfilerController {
         }
         table table {
             margin: 0;
+        }
+        pre {
+            padding: 4px;
+            word-break: break-all;
         }
         `;
     }
@@ -2553,7 +2625,7 @@ class Harmony {
     typedControllerArguments = new Map();
     constructor(options) {
         this.options = options;
-        this.profiler = new Profiler(!!options.enableProfiler);
+        this.profiler = new Profiler(!!options.profiler?.enabled);
         this.router = new Router();
         this.server = options.enableHttps
             ? https__default["default"].createServer(options.httpsOptions, this.handle.bind(this))
@@ -2577,8 +2649,16 @@ class Harmony {
             options.controllers.forEach((controllerClass) => this.registerController(controllerClass));
         }
         // Register profiler controller if the profiler is enabled.
-        if (options.enableProfiler) {
+        if (options.profiler?.enabled) {
             this.registerController(ProfilerController);
+        }
+        // Register a firewall event listener for the firewall.
+        if (typeof options.profiler?.firewall === 'function') {
+            this.registerRequestEventListener(async (e) => {
+                if (e.route._controller[0] === ProfilerController && !await options.profiler.firewall(e)) {
+                    e.setResponse(new Response('', exports.HttpStatus.UNAUTHORIZED));
+                }
+            });
         }
         // Register event listeners.
         if (options.errorEventListeners) {
@@ -2648,7 +2728,7 @@ class Harmony {
         // Handle upgrade events.
         this.server.on('upgrade', (message, socket) => {
             try {
-                const request = new Request(message, new RequestBody(Buffer.from(''), []));
+                const request = new Request(message, new RequestBody(Buffer.from(''), []), new Profile(message));
                 const event = new UpgradeEvent(request, socket, this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined);
                 for (let handler of this.upgradeEventListeners) {
                     if (handler.callback(event)) {
@@ -2817,7 +2897,7 @@ class Harmony {
         profile.start('Decode request');
         try {
             body = await this.requestDecoder.decode(req, res);
-            request = new Request(req, body);
+            request = new Request(req, body, profile);
             route = this.router.findByRequest(request);
             profile.hRequest = request;
             profile.hRoute = route;
@@ -2883,6 +2963,7 @@ class Harmony {
                 }
                 profile.stop('Handle controller response');
             }
+            profile.stop('Controller');
             profile.hResponse = response;
             // Fire the 'response' event to allow external services to modify
             // the returned response. For example, setting specific cookies or

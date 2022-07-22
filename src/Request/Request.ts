@@ -8,6 +8,7 @@
 
 import {TLSSocket}       from 'tls';
 import {Bag}             from '../Bag';
+import {Profile}         from '../Profiler/Profile';
 import {IRoute}          from '../Router/Router';
 import {IncomingMessage} from 'http';
 import {IUploadedFile}   from './IUploadedFile';
@@ -32,8 +33,9 @@ export class Request
     private readonly _files: Bag<IUploadedFile | IUploadedFile[]>;
     private readonly _body: Buffer;
     private readonly _isSecure: boolean;
+    private readonly _profile: Profile;
 
-    public constructor(private r: IncomingMessage, body: RequestBody)
+    public constructor(private r: IncomingMessage, body: RequestBody, profile: Profile = null)
     {
         // const u = url.parse(r.url, true, true);
         const u: URL                     = new URL(r.url, 'http://localhost/');
@@ -52,6 +54,7 @@ export class Request
         this._files      = body.files;
         this._body       = body.raw;
         this._isSecure   = (r.socket instanceof TLSSocket) && r.socket.encrypted;
+        this._profile    = profile;
     }
 
     /**
@@ -88,6 +91,39 @@ export class Request
         }
 
         return undefined;
+    }
+
+    /**
+     * Starts a profile measurement with the given name.
+     *
+     * Call {@link Request.stopProfileMeasurement} to finalize the measurement
+     * and store it in the profile so it can be seen in the profiler timeline.
+     *
+     * @param {string} name
+     * @returns {this}
+     */
+    public startProfileMeasurement(name: string): this
+    {
+        if (this._profile instanceof Profile) {
+            this._profile.start(name);
+        }
+
+        return this;
+    }
+
+    /**
+     * Stops the time measurement of the event with the given name.
+     *
+     * @param {string} name
+     * @returns {this}
+     */
+    public stopProfileMeasurement(name: string): this
+    {
+        if (this._profile instanceof Profile) {
+            this._profile.stop(name);
+        }
+
+        return this;
     }
 
     /**

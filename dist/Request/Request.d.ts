@@ -1,6 +1,7 @@
 /// <reference types="node" />
 /// <reference types="node" />
 import { Bag } from '../Bag';
+import { Profile } from '../Profiler/Profile';
 import { IRoute } from '../Router/Router';
 import { IncomingMessage } from 'http';
 import { IUploadedFile } from './IUploadedFile';
@@ -18,7 +19,8 @@ export declare class Request {
     private readonly _files;
     private readonly _body;
     private readonly _isSecure;
-    constructor(r: IncomingMessage, body: RequestBody);
+    private readonly _profile;
+    constructor(r: IncomingMessage, body: RequestBody, profile?: Profile);
     /**
      * Returns a value from one of the available bags in the following order:
      *  - post fields
@@ -32,6 +34,23 @@ export declare class Request {
      * @return {*}
      */
     get(name: string): any;
+    /**
+     * Starts a profile measurement with the given name.
+     *
+     * Call {@link Request.stopProfileMeasurement} to finalize the measurement
+     * and store it in the profile so it can be seen in the profiler timeline.
+     *
+     * @param {string} name
+     * @returns {this}
+     */
+    startProfileMeasurement(name: string): this;
+    /**
+     * Stops the time measurement of the event with the given name.
+     *
+     * @param {string} name
+     * @returns {this}
+     */
+    stopProfileMeasurement(name: string): this;
     /**
      * Returns the IP address of the client.
      *

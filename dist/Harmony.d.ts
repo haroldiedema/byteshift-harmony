@@ -236,16 +236,31 @@ export interface IConstructorOptions {
          */
         cookieName?: string;
     };
-    /**
-     * Enables the profiler.
-     *
-     * The profiler measures timings for every step during a single request and
-     * stores it temporarily in memory. A maximum of 50 profiles are being kept
-     * at all times.
-     *
-     * Profiles can be accessed from the browser at the "/_profiler" route.
-     */
-    enableProfiler?: boolean;
+    profiler?: {
+        /**
+         * Enables the profiler.
+         *
+         * The profiler measures timings for every step during a single request
+         * and stores it temporarily in memory.
+         *
+         * Profiles can be accessed from the browser at the "/_profiler" route.
+         */
+        enabled?: boolean;
+        /**
+         * A callback function that validates the incoming request.
+         *
+         * Returns true if the user making the request has access to the
+         * profiler, false otherwise.
+         *
+         * @param {RequestEvent} event
+         * @returns {Promise<boolean>}
+         */
+        firewall?: (event: RequestEvent) => Promise<boolean>;
+        /**
+         * The maximum amount of profiles to keep in memory at all times.
+         */
+        maxProfiles?: number;
+    };
     /**
      * Whether to use an HTTPS server rather than HTTP.
      * Use the 'sslOptions' object to pass options to the HTTP server like SSL

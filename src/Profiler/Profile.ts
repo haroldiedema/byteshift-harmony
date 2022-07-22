@@ -88,7 +88,6 @@ export class Profile
     public stop(name: string): void
     {
         if (!this.activeMeasurements.has(name)) {
-            console.warn(`[PROFILER] There is no event "${name}" being tracked right now.`);
             return;
         }
 

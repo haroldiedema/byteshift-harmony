@@ -6,6 +6,10 @@ export declare class ProfilerController {
     constructor(profiler: Profiler);
     indexAction(): HtmlResponse;
     profileAction(id: string): Response;
+    private isViewableRequestBody;
+    private isViewableResponseBody;
+    private getViewableResponseBody;
+    private htmlEntities;
     /**
      * Renders a timeline of the given profile.
      *
