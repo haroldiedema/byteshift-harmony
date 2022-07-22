@@ -1,8 +1,9 @@
 import { Profile } from './Profile';
 export declare class Profiler {
     readonly isEnabled: boolean;
+    private readonly maxProfiles;
     readonly profiles: Profile[];
-    constructor(isEnabled: boolean);
+    constructor(isEnabled: boolean, maxProfiles: number);
     /**
      * Returns true if a profile with the given ID exists.
      *

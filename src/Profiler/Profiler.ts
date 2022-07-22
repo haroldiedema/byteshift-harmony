@@ -12,7 +12,7 @@ export class Profiler
 {
     public readonly profiles: Profile[] = [];
 
-    constructor(public readonly isEnabled: boolean)
+    constructor(public readonly isEnabled: boolean, private readonly maxProfiles: number)
     {
     }
 
@@ -57,7 +57,7 @@ export class Profiler
 
         this.profiles.push(profile);
 
-        if (this.profiles.length > 50) {
+        if (this.profiles.length > (this.maxProfiles ?? 50)) {
             this.profiles.shift();
         }
     }

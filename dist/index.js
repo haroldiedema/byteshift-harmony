@@ -1404,9 +1404,11 @@ class HarmonyErrorPage {
  */
 class Profiler {
     isEnabled;
+    maxProfiles;
     profiles = [];
-    constructor(isEnabled) {
+    constructor(isEnabled, maxProfiles) {
         this.isEnabled = isEnabled;
+        this.maxProfiles = maxProfiles;
     }
     /**
      * Returns true if a profile with the given ID exists.
@@ -1440,7 +1442,7 @@ class Profiler {
             return;
         }
         this.profiles.push(profile);
-        if (this.profiles.length > 50) {
+        if (this.profiles.length > (this.maxProfiles ?? 50)) {
             this.profiles.shift();
         }
     }
@@ -2625,7 +2627,7 @@ class Harmony {
     typedControllerArguments = new Map();
     constructor(options) {
         this.options = options;
-        this.profiler = new Profiler(!!options.profiler?.enabled);
+        this.profiler = new Profiler(!!options.profiler?.enabled, options.profiler?.maxProfiles ?? 50);
         this.router = new Router();
         this.server = options.enableHttps
             ? https__default["default"].createServer(options.httpsOptions, this.handle.bind(this))

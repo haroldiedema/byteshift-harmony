@@ -55,7 +55,7 @@ export class Harmony
 
     constructor(private readonly options: IConstructorOptions)
     {
-        this.profiler = new Profiler(!!options.profiler?.enabled);
+        this.profiler = new Profiler(!!options.profiler?.enabled, options.profiler?.maxProfiles ?? 50);
         this.router   = new Router();
         this.server   = options.enableHttps
                         ? https.createServer(options.httpsOptions, this.handle.bind(this))
