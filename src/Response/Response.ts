@@ -6,9 +6,10 @@
  */
 'use strict';
 
-import {Bag}            from '../Bag';
-import {CookieBag}      from '../Cookie/CookieBag';
-import {ServerResponse} from 'http';
+import {Bag}             from '../Bag';
+import {CookieBag}       from '../Cookie/CookieBag';
+import {ServerResponse}  from 'http';
+import {RawHttpResponse} from '../Server/RawHttpResponse';
 
 export class Response
 {
@@ -98,7 +99,7 @@ export class Response
     /**
      * Sends this request to the client.
      */
-    public send(response: ServerResponse): void
+    public send(response: RawHttpResponse): void
     {
         // Abort if the native response was already sent. This will occur
         // solely when an error is triggered that has been internally caught.

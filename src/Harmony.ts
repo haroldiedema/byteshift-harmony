@@ -6,7 +6,6 @@
  */
 'use strict';
 
-import http, {IncomingMessage}                  from 'http';
 import https                                    from 'https';
 import * as net                                 from 'net';
 import {Socket}                                 from 'net';
@@ -29,6 +28,12 @@ import {RequestBody}                            from './Request/RequestBody';
 import {RequestBodyDecoder}                     from './Request/RequestBodyDecoder';
 import {HttpStatus, Response}                   from './Response/Response';
 import {IRoute, Router}                         from './Router/Router';
+import {Http1Server}                            from './Server/Http1Server';
+import {Http2Server}                            from './Server/Http2Server';
+import {IHttpServer}                            from './Server/IHttpServer';
+import {IServerOptions}                         from './Server/IServerOptions';
+import {RawHttpRequest}                         from './Server/RawHttpRequest';
+import {RawHttpResponse}                        from './Server/RawHttpResponse';
 import {InMemoryStorage}                        from './Session/InMemoryStorage';
 import {ISessionStorage}                        from './Session/ISessionStorage';
 import {Session}                                from './Session/Session';
@@ -40,7 +45,7 @@ import {TemplateManager}                        from './Templating/TemplateManag
 export class Harmony
 {
     private readonly router: Router;
-    private readonly server: http.Server | https.Server;
+    private readonly server: IHttpServer;
     private readonly requestDecoder: RequestBodyDecoder;
     private readonly sessionManager: SessionManager;
     private readonly staticAssetHandler: StaticAssetHandler;
@@ -55,24 +60,18 @@ export class Harmony
 
     constructor(private readonly options: IConstructorOptions)
     {
+        if (undefined === options.httpVersion) {
+            options.httpVersion = 1;
+        }
+
         this.profiler = new Profiler(!!options.profiler?.enabled, options.profiler?.maxProfiles ?? 50);
         this.router   = new Router();
-        this.server   = options.enableHttps
-                        ? https.createServer(options.httpsOptions, this.handle.bind(this))
-                        : http.createServer(this.handle.bind(this));
+        this.server   = options.httpVersion === 1 ? new Http1Server(options, this.handle.bind(this)) : new Http2Server(
+            options,
+            this.handle.bind(this),
+        );
 
         this.requestDecoder = new RequestBodyDecoder(options.maxUploadSize || (1048576));
-
-        // SNI configuration.
-        if (options.sni && typeof options.sni === 'object') {
-            if (options.enableHttps === false) {
-                console.warn('SNI configuration is ignored because HTTPS is disabled.');
-            } else {
-                Object.keys(options.sni).forEach((hostname: string) => {
-                    (this.server as https.Server).addContext(hostname, options.sni[hostname]);
-                });
-            }
-        }
 
         // Register default error page handler with the lowest priority.
         this.registerErrorEventListener((new HarmonyErrorPage()).onServerError, -Infinity);
@@ -181,9 +180,9 @@ export class Harmony
         });
 
         // Handle upgrade events.
-        this.server.on('upgrade', (message: IncomingMessage, socket: Socket) => {
+        this.server.onUpgradeRequest((req: RawHttpRequest, socket: Socket) => {
             try {
-                const request = new Request(message, new RequestBody(Buffer.from(''), []), new Profile(message));
+                const request = new Request(req, new RequestBody(Buffer.from(''), []), new Profile(req));
                 const event   = new UpgradeEvent(
                     request,
                     socket,
@@ -207,7 +206,7 @@ export class Harmony
      */
     public start(): void
     {
-        this.server.listen(this.options.port || 8000);
+        this.server.start();
     }
 
     /**
@@ -240,11 +239,11 @@ export class Harmony
     }
 
     /**
-     * Returns the HTTP(s) server of this Harmony instance.
+     * Returns the HTTP server wrapper of this Harmony instance.
      *
      * @returns {http.Server}
      */
-    public get httpServer(): http.Server
+    public get httpServer(): IHttpServer
     {
         return this.server;
     }
@@ -409,10 +408,10 @@ export class Harmony
     /**
      * Handles an incoming HTTP request.
      *
-     * @param {http.IncomingMessage} req
-     * @param {http.ServerResponse} res
+     * @param {RawHttpRequest} req
+     * @param {RawHttpResponse} res
      */
-    private async handle(req: http.IncomingMessage, res: http.ServerResponse): Promise<void>
+    private async handle(req: RawHttpRequest, res: RawHttpResponse): Promise<void>
     {
         let body, request, route;
 
@@ -632,23 +631,8 @@ export class Harmony
     }
 }
 
-export interface IConstructorOptions
+export interface IConstructorOptions extends IServerOptions
 {
-    /**
-     * The port to listen on for incoming connections.
-     *
-     * Defaults to 8000.
-     */
-    port?: number;
-
-    /**
-     * The maximum size of a request body in bytes.
-     *
-     * Make sure to keep this number relatively low to prevent flood attacks.
-     * Defaults to 1MB.
-     */
-    maxUploadSize?: number;
-
     static?: {
         /**
          * One or more directories to serve static assets from.
@@ -768,26 +752,6 @@ export interface IConstructorOptions
          */
         maxProfiles?: number;
     }
-
-    /**
-     * Whether to use an HTTPS server rather than HTTP.
-     * Use the 'sslOptions' object to pass options to the HTTP server like SSL
-     * certificate files, etc.
-     *
-     * Defaults to false.
-     */
-    enableHttps?: boolean;
-
-    /**
-     * Options to pass to {https.createServer} when 'useHttps' is enabled.
-     */
-    httpsOptions?: tls.SecureContextOptions & tls.TlsOptions & http.ServerOptions;
-
-    /**
-     * SNI (Server Name Identification) configuration used for serving multiple
-     * domains over HTTPS with different certificates.
-     */
-    sni?: { [hostname: string]: tls.SecureContextOptions };
 
     /**
      * A service container to pull controller classes from.

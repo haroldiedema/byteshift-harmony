@@ -6,13 +6,13 @@
  */
 'use strict';
 
-import {TLSSocket}       from 'tls';
-import {Bag}             from '../Bag';
-import {Profile}         from '../Profiler/Profile';
-import {IRoute}          from '../Router/Router';
-import {IncomingMessage} from 'http';
-import {IUploadedFile}   from './IUploadedFile';
-import {RequestBody}     from './RequestBody';
+import {TLSSocket}      from 'tls';
+import {Bag}            from '../Bag';
+import {Profile}        from '../Profiler/Profile';
+import {IRoute}         from '../Router/Router';
+import {RawHttpRequest} from '../Server/RawHttpRequest';
+import {IUploadedFile}  from './IUploadedFile';
+import {RequestBody}    from './RequestBody';
 
 const optionalParam = /\((.*?)\)/g;
 const namedParam    = /(\(\?)?:\w+/g;
@@ -35,9 +35,8 @@ export class Request
     private readonly _isSecure: boolean;
     private readonly _profile: Profile;
 
-    public constructor(private r: IncomingMessage, body: RequestBody, profile: Profile = null)
+    public constructor(private r: RawHttpRequest, body: RequestBody, profile: Profile = null)
     {
-        // const u = url.parse(r.url, true, true);
         const u: URL                     = new URL(r.url, 'http://localhost/');
         const q: { [name: string]: any } = {};
 
@@ -248,7 +247,7 @@ export class Request
      */
     public get body(): Buffer
     {
-        return this._body
+        return this._body;
     }
 
     /**

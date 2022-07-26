@@ -65,6 +65,7 @@ export class SessionManager
         if (!_id) {
             return undefined;
         }
+
         return this.sessionData.get(_id);
     }
 

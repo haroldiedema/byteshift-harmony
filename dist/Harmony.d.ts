@@ -1,6 +1,4 @@
 /// <reference types="node" />
-/// <reference types="node" />
-import http from 'http';
 import tls from 'tls';
 import { ErrorEvent } from './Event/ErrorEvent';
 import { RenderTemplateEvent } from './Event/RenderTemplateEvent';
@@ -10,6 +8,8 @@ import { StaticRequestEvent } from './Event/StaticRequestEvent';
 import { StaticResponseEvent } from './Event/StaticResponseEvent';
 import { UpgradeEvent } from './Event/UpgradeEvent';
 import { Request } from './Request/Request';
+import { IHttpServer } from './Server/IHttpServer';
+import { IServerOptions } from './Server/IServerOptions';
 import { ISessionStorage } from './Session/ISessionStorage';
 import { Session } from './Session/Session';
 import { HarmonyElementFactory } from './SSR/Elements';
@@ -52,11 +52,11 @@ export declare class Harmony {
      */
     registerElement(tagName: string, factory: HarmonyElementFactory): this;
     /**
-     * Returns the HTTP(s) server of this Harmony instance.
+     * Returns the HTTP server wrapper of this Harmony instance.
      *
      * @returns {http.Server}
      */
-    get httpServer(): http.Server;
+    get httpServer(): IHttpServer;
     /**
      * Adds a secure context if the request hostname matches the given hostname (or wildcard).
      *
@@ -123,8 +123,8 @@ export declare class Harmony {
     /**
      * Handles an incoming HTTP request.
      *
-     * @param {http.IncomingMessage} req
-     * @param {http.ServerResponse} res
+     * @param {RawHttpRequest} req
+     * @param {RawHttpResponse} res
      */
     private handle;
     /**
@@ -140,20 +140,7 @@ export declare class Harmony {
      */
     private handleControllerAction;
 }
-export interface IConstructorOptions {
-    /**
-     * The port to listen on for incoming connections.
-     *
-     * Defaults to 8000.
-     */
-    port?: number;
-    /**
-     * The maximum size of a request body in bytes.
-     *
-     * Make sure to keep this number relatively low to prevent flood attacks.
-     * Defaults to 1MB.
-     */
-    maxUploadSize?: number;
+export interface IConstructorOptions extends IServerOptions {
     static?: {
         /**
          * One or more directories to serve static assets from.
@@ -260,25 +247,6 @@ export interface IConstructorOptions {
          * The maximum amount of profiles to keep in memory at all times.
          */
         maxProfiles?: number;
-    };
-    /**
-     * Whether to use an HTTPS server rather than HTTP.
-     * Use the 'sslOptions' object to pass options to the HTTP server like SSL
-     * certificate files, etc.
-     *
-     * Defaults to false.
-     */
-    enableHttps?: boolean;
-    /**
-     * Options to pass to {https.createServer} when 'useHttps' is enabled.
-     */
-    httpsOptions?: tls.SecureContextOptions & tls.TlsOptions & http.ServerOptions;
-    /**
-     * SNI (Server Name Identification) configuration used for serving multiple
-     * domains over HTTPS with different certificates.
-     */
-    sni?: {
-        [hostname: string]: tls.SecureContextOptions;
     };
     /**
      * A service container to pull controller classes from.

@@ -4,9 +4,10 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 var tls = require('tls');
 require('reflect-metadata');
-var http = require('http');
 var https = require('https');
 var querystring = require('querystring');
+var http = require('http');
+var http2 = require('http2');
 var fs = require('fs');
 var path = require('path');
 
@@ -30,9 +31,9 @@ function _interopNamespace(e) {
     return Object.freeze(n);
 }
 
-var http__default = /*#__PURE__*/_interopDefaultLegacy(http);
 var https__default = /*#__PURE__*/_interopDefaultLegacy(https);
 var querystring__namespace = /*#__PURE__*/_interopNamespace(querystring);
+var http__default = /*#__PURE__*/_interopDefaultLegacy(http);
 var fs__default = /*#__PURE__*/_interopDefaultLegacy(fs);
 var fs__namespace = /*#__PURE__*/_interopNamespace(fs);
 var path__default = /*#__PURE__*/_interopDefaultLegacy(path);
@@ -753,7 +754,6 @@ class Request {
     _profile;
     constructor(r, body, profile = null) {
         this.r = r;
-        // const u = url.parse(r.url, true, true);
         const u = new URL(r.url, 'http://localhost/');
         const q = {};
         u.searchParams.forEach((v, k) => q[k] = v);
@@ -1367,6 +1367,178 @@ class Router {
             return undefined;
         }
         return route;
+    }
+}
+
+/* Byteshift Harmony                                                               _         _             __   _ _____
+ *    A component-based HTTP server micro-framework                               | |__ _  _| |_ ___  ___ / /  (_) _/ /_
+ *                                                                                | '_ \ || |  _/ -_|(_-</ _ \/ / _/ __/
+ * (C)2020, Harold Iedema <harold@iedema.me>                                      |_.__/\_, |\__\___/___/_//_/_/_/ \__/
+ * See LICENSE for licensing information                                                |__/             H A R M O N Y
+ */
+class RawHttpRequest {
+    r;
+    /**
+     * The request method as a string. Read-only. Examples: `'GET'`, `'DELETE'`.
+     *
+     * @type {string}
+     */
+    method;
+    /**
+     * Request URL string. This contains only the URL that is present in the
+     * actual HTTP request. If the request is:
+     *
+     * ```http
+     * GET /status?name=ryan HTTP/1.1
+     * Accept: text/plain
+     * ```
+     *
+     * Then `request.url` will be:
+     *
+     * ```js
+     * '/status?name=ryan'
+     * ```
+     *
+     * To parse the url into its parts, `new URL()` can be used:
+     *
+     * ```console
+     * $ node
+     * > new URL('/status?name=ryan', 'http://example.com')
+     * URL {
+     *   href: 'http://example.com/status?name=ryan',
+     *   origin: 'http://example.com',
+     *   protocol: 'http:',
+     *   username: '',
+     *   password: '',
+     *   host: 'example.com',
+     *   hostname: 'example.com',
+     *   port: '',
+     *   pathname: '/status',
+     *   search: '?name=ryan',
+     *   searchParams: URLSearchParams { 'name' => 'ryan' },
+     *   hash: ''
+     * }
+     * ```
+     */
+    url;
+    /**
+     * The request/response headers object.
+     *
+     * Key-value pairs of header names and values. Header names are lower-cased.
+     *
+     * ```js
+     * // Prints something like:
+     * //
+     * // { 'user-agent': 'curl/7.22.0',
+     * //   host: '127.0.0.1:8000',
+     * //   accept: '*' }
+     * console.log(request.headers);
+     * ```
+     *
+     * See `HTTP/2 Headers Object`.
+     *
+     * In HTTP/2, the request path, host name, protocol, and method are represented as
+     * special headers prefixed with the `:` character (e.g. `':path'`). These special
+     * headers will be included in the `request.headers` object. Care must be taken not
+     * to inadvertently modify these special headers or errors may occur. For instance,
+     * removing all headers from the request will cause errors to occur:
+     *
+     * ```js
+     * removeAllHeaders(request.headers);
+     * assert(request.url);   // Fails because the :path header has been removed
+     * ```
+     */
+    headers;
+    /**
+     * Returns a `Proxy` object that acts as a `net.Socket` (or `tls.TLSSocket`)
+     * but applies getters, setters, and methods based on HTTP/2 logic.
+     *
+     * `destroyed`, `readable`, and `writable` properties will be retrieved from
+     * and set on `request.stream`.
+     *
+     * `destroy`, `emit`, `end`, `on` and `once` methods will be called on
+     * `request.stream`.
+     *
+     * `setTimeout` method will be called on `request.stream.session`.
+     *
+     * `pause`, `read`, `resume`, and `write` will throw an error with code
+     * `ERR_HTTP2_NO_SOCKET_MANIPULATION`. See `Http2Session and Sockets` for
+     * more information.
+     *
+     * All other interactions will be routed directly to the socket. With TLS
+     * support, use `request.socket.getPeerCertificate()` to obtain the client's
+     * authentication details.
+     */
+    socket;
+    constructor(r) {
+        this.r = r;
+        this.method = r.http1 ? r.http1.method : r.http2.method;
+        this.url = r.http1 ? r.http1.url : r.http2.url;
+        this.headers = r.http1 ? r.http1.headers : r.http2.headers;
+        this.socket = r.http1 ? r.http1.socket : r.http2.socket;
+    }
+    on(eventName, callback) {
+        this.r.http1
+            ? this.r.http1.on(eventName, callback)
+            : this.r.http2.on(eventName, callback);
+        return this;
+    }
+}
+
+/* Byteshift Harmony                                                               _         _             __   _ _____
+ *    A component-based HTTP server micro-framework                               | |__ _  _| |_ ___  ___ / /  (_) _/ /_
+ *                                                                                | '_ \ || |  _/ -_|(_-</ _ \/ / _/ __/
+ * (C)2020, Harold Iedema <harold@iedema.me>                                      |_.__/\_, |\__\___/___/_//_/_/_/ \__/
+ * See LICENSE for licensing information                                                |__/             H A R M O N Y
+ */
+class RawHttpResponse {
+    r;
+    constructor(r) {
+        this.r = r;
+    }
+    /**
+     * Sets a single header value for the header object.
+     *
+     * @param {string} name
+     * @param {number|string|ReadonlyArray<string>} value Header value
+     */
+    setHeader(name, value) {
+        this.r.http1 ? this.r.http1.setHeader(name, value) : this.r.http2.setHeader(name, value);
+        return this;
+    }
+    /**
+     * Writes the given chunk to the response stream.
+     *
+     * @param chunk
+     * @param {(error: (Error | null | undefined)) => void} callback
+     * @returns {this}
+     */
+    write(chunk, callback) {
+        this.r.http1 ? this.r.http1.write(chunk, callback) : this.r.http2.write(chunk, callback);
+        return this;
+    }
+    /**
+     * Returns true if headers were already sent to the client.
+     *
+     * @returns {boolean}
+     */
+    get headersSent() {
+        return this.r.http1 ? this.r.http1.headersSent : this.r.http2.headersSent;
+    }
+    /**
+     * Writes the HTTP header to the client.
+     *
+     * @param {HttpStatus} statusCode
+     * @param {OutgoingHttpHeaders} headers
+     * @returns {this}
+     */
+    writeHead(statusCode, headers) {
+        this.r.http1 ? this.r.http1.writeHead(statusCode, headers) : this.r.http2.writeHead(statusCode, headers);
+        return this;
+    }
+    end(cb) {
+        this.r.http1 ? this.r.http1.end(cb) : this.r.http2.end(cb);
+        return this;
     }
 }
 
@@ -2172,7 +2344,7 @@ class RequestBodyDecoder {
     /**
      * Parses the given body as a multipart/form-data payload.
      *
-     * @param {ServerResponse} res
+     * @param {RawHttpResponse} res
      * @param {string} type
      * @param {Buffer} body
      * @private
@@ -2183,7 +2355,7 @@ class RequestBodyDecoder {
     /**
      * Parses the given body as a x-www-form-urlencoded payload.
      *
-     * @param {ServerResponse} res
+     * @param {RawHttpResponse} res
      * @param {Buffer} body
      * @returns {RequestBody}
      * @private
@@ -2195,7 +2367,7 @@ class RequestBodyDecoder {
             Object.keys(data).forEach((key) => {
                 parts.push({
                     name: key,
-                    data: Buffer.from(data[key])
+                    data: Buffer.from(data[key]),
                 });
             });
             return new RequestBody(body, parts);
@@ -2212,7 +2384,7 @@ class RequestBodyDecoder {
      * the maximum upload size.
      *
      * @param {IncomingMessage} req
-     * @param {ServerResponse} res
+     * @param {RawHttpResponse} res
      * @returns {Promise<Buffer>}
      * @private
      */
@@ -2234,6 +2406,165 @@ class RequestBodyDecoder {
                 reject(err);
             });
         });
+    }
+}
+
+/* Byteshift Harmony                                                               _         _             __   _ _____
+ *    A component-based HTTP server micro-framework                               | |__ _  _| |_ ___  ___ / /  (_) _/ /_
+ *                                                                                | '_ \ || |  _/ -_|(_-</ _ \/ / _/ __/
+ * (C)2020, Harold Iedema <harold@iedema.me>                                      |_.__/\_, |\__\___/___/_//_/_/_/ \__/
+ * See LICENSE for licensing information                                                |__/             H A R M O N Y
+ */
+class AbstractHttpServer {
+    server;
+    options;
+    /**
+     * @inheritDoc
+     */
+    on(eventName, callback) {
+        this.server.on(eventName, callback);
+    }
+    /**
+     * @inheritDoc
+     */
+    once(eventName, callback) {
+        this.server.once(eventName, callback);
+    }
+    /**
+     * @inheritDoc
+     */
+    off(eventName, callback) {
+        this.server.off(eventName, callback);
+    }
+    /**
+     * @inheritDoc
+     */
+    start() {
+        this.server.listen(this.options.port);
+    }
+}
+
+/* Byteshift Harmony                                                               _         _             __   _ _____
+ *    A component-based HTTP server micro-framework                               | |__ _  _| |_ ___  ___ / /  (_) _/ /_
+ *                                                                                | '_ \ || |  _/ -_|(_-</ _ \/ / _/ __/
+ * (C)2020, Harold Iedema <harold@iedema.me>                                      |_.__/\_, |\__\___/___/_//_/_/_/ \__/
+ * See LICENSE for licensing information                                                |__/             H A R M O N Y
+ */
+const DefaultOptions = {
+    httpVersion: 1,
+    port: 8000,
+    enableHttps: false,
+    httpsOptions: {},
+};
+
+/* Byteshift Harmony                                                               _         _             __   _ _____
+ *    A component-based HTTP server micro-framework                               | |__ _  _| |_ ___  ___ / /  (_) _/ /_
+ *                                                                                | '_ \ || |  _/ -_|(_-</ _ \/ / _/ __/
+ * (C)2020, Harold Iedema <harold@iedema.me>                                      |_.__/\_, |\__\___/___/_//_/_/_/ \__/
+ * See LICENSE for licensing information                                                |__/             H A R M O N Y
+ */
+class Http1Server extends AbstractHttpServer {
+    handler;
+    constructor(options, handler) {
+        super();
+        this.handler = handler;
+        this.options = Object.assign({}, DefaultOptions, options);
+        this.server = options.enableHttps
+            ? https__default["default"].createServer(options.httpsOptions, this.handle.bind(this))
+            : http__default["default"].createServer(this.handle.bind(this));
+        // Apply SNI configuration.
+        if (options.sni && typeof options.sni === 'object') {
+            if (options.enableHttps === false) {
+                console.warn('SNI configuration is ignored because HTTPS is disabled.');
+            }
+            else {
+                Object.keys(options.sni).forEach((hostname) => {
+                    this.server.addContext(hostname, options.sni[hostname]);
+                });
+            }
+        }
+    }
+    /**
+     * @inheritDoc
+     */
+    onUpgradeRequest(callback) {
+        this.server.on('upgrade', (req, socket) => {
+            callback(new RawHttpRequest({ http1: req }), socket);
+        });
+    }
+    /**
+     * Handles an incoming HTTP/1 connection.
+     *
+     * @param {IncomingMessage} req
+     * @param {ServerResponse} res
+     * @private
+     */
+    handle(req, res) {
+        const rawRequest = new RawHttpRequest({ http1: req }), rawResponse = new RawHttpResponse({ http1: res });
+        this.handler(rawRequest, rawResponse);
+    }
+}
+
+/* Byteshift Harmony                                                               _         _             __   _ _____
+ *    A component-based HTTP server micro-framework                               | |__ _  _| |_ ___  ___ / /  (_) _/ /_
+ *                                                                                | '_ \ || |  _/ -_|(_-</ _ \/ / _/ __/
+ * (C)2020, Harold Iedema <harold@iedema.me>                                      |_.__/\_, |\__\___/___/_//_/_/_/ \__/
+ * See LICENSE for licensing information                                                |__/             H A R M O N Y
+ */
+class Http2Server extends AbstractHttpServer {
+    handler;
+    constructor(options, handler) {
+        super();
+        this.handler = handler;
+        this.options = Object.assign({}, DefaultOptions, options);
+        if (!this.options.httpsOptions?.key) {
+            throw new Error('HTTPS must be enabled when using the HTTP/2 server.');
+        }
+        this.server = http2.createSecureServer({
+            ...this.options.httpsOptions,
+            SNICallback: this.handleSNI.bind(this),
+            // The 'allowHTTP1' option is required for WebSocket functionality.
+            // See {@link https://github.com/nodejs/node/issues/31695} for more
+            // info and links to related open issues.
+            allowHTTP1: true,
+        }, this.handle.bind(this));
+    }
+    /**
+     * @inheritDoc
+     */
+    onUpgradeRequest(callback) {
+        this.server.on('upgrade', (req, socket) => {
+            callback(new RawHttpRequest({ http2: req }), socket);
+        });
+    }
+    /**
+     * Handles an incoming HTTP/2 request.
+     *
+     * @param {Http2ServerRequest} req
+     * @param {Http2ServerResponse} res
+     * @private
+     */
+    handle(req, res) {
+        const rawRequest = new RawHttpRequest({ http2: req }), rawResponse = new RawHttpResponse({ http2: res });
+        this.handler(rawRequest, rawResponse);
+    }
+    /**
+     * Invoked if the client supports SNI TLS extension. Two arguments
+     * will be passed when called: servername and cb. This method should
+     * invoke cb(null, ctx), where ctx is a SecureContext instance.
+     * (tls.createSecureContext(...) can be used to get a proper
+     * SecureContext.) If SNICallback wasn't provided the default callback
+     * with high-level API will be used instead.
+     *
+     * @param {string} servername
+     * @param {(err: (Error | null), ctx?: SecureContext) => void} cb
+     * @private
+     */
+    handleSNI(servername, cb) {
+        if (!this.options.sni[servername]) {
+            return cb(null);
+        }
+        cb(null, tls.createSecureContext(this.options.sni[servername]));
     }
 }
 
@@ -2627,23 +2958,13 @@ class Harmony {
     typedControllerArguments = new Map();
     constructor(options) {
         this.options = options;
+        if (undefined === options.httpVersion) {
+            options.httpVersion = 1;
+        }
         this.profiler = new Profiler(!!options.profiler?.enabled, options.profiler?.maxProfiles ?? 50);
         this.router = new Router();
-        this.server = options.enableHttps
-            ? https__default["default"].createServer(options.httpsOptions, this.handle.bind(this))
-            : http__default["default"].createServer(this.handle.bind(this));
+        this.server = options.httpVersion === 1 ? new Http1Server(options, this.handle.bind(this)) : new Http2Server(options, this.handle.bind(this));
         this.requestDecoder = new RequestBodyDecoder(options.maxUploadSize || (1048576));
-        // SNI configuration.
-        if (options.sni && typeof options.sni === 'object') {
-            if (options.enableHttps === false) {
-                console.warn('SNI configuration is ignored because HTTPS is disabled.');
-            }
-            else {
-                Object.keys(options.sni).forEach((hostname) => {
-                    this.server.addContext(hostname, options.sni[hostname]);
-                });
-            }
-        }
         // Register default error page handler with the lowest priority.
         this.registerErrorEventListener((new HarmonyErrorPage()).onServerError, -Infinity);
         // Register controllers.
@@ -2728,9 +3049,9 @@ class Harmony {
             });
         });
         // Handle upgrade events.
-        this.server.on('upgrade', (message, socket) => {
+        this.server.onUpgradeRequest((req, socket) => {
             try {
-                const request = new Request(message, new RequestBody(Buffer.from(''), []), new Profile(message));
+                const request = new Request(req, new RequestBody(Buffer.from(''), []), new Profile(req));
                 const event = new UpgradeEvent(request, socket, this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined);
                 for (let handler of this.upgradeEventListeners) {
                     if (handler.callback(event)) {
@@ -2748,7 +3069,7 @@ class Harmony {
      * Starts the HTTP server.
      */
     start() {
-        this.server.listen(this.options.port || 8000);
+        this.server.start();
     }
     /**
      * Embeds the given plugin in this Harmony server instance.
@@ -2775,7 +3096,7 @@ class Harmony {
         return this;
     }
     /**
-     * Returns the HTTP(s) server of this Harmony instance.
+     * Returns the HTTP server wrapper of this Harmony instance.
      *
      * @returns {http.Server}
      */
@@ -2890,8 +3211,8 @@ class Harmony {
     /**
      * Handles an incoming HTTP request.
      *
-     * @param {http.IncomingMessage} req
-     * @param {http.ServerResponse} res
+     * @param {RawHttpRequest} req
+     * @param {RawHttpResponse} res
      */
     async handle(req, res) {
         let body, request, route;
@@ -3096,6 +3417,8 @@ exports.InternalServerError = InternalServerError;
 exports.JsonResponse = JsonResponse;
 exports.Node = Node;
 exports.NotFoundError = NotFoundError;
+exports.RawHttpRequest = RawHttpRequest;
+exports.RawHttpResponse = RawHttpResponse;
 exports.RedirectResponse = RedirectResponse;
 exports.RenderTemplateEvent = RenderTemplateEvent;
 exports.Request = Request;

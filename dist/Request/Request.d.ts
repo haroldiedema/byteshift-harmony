@@ -1,9 +1,8 @@
 /// <reference types="node" />
-/// <reference types="node" />
 import { Bag } from '../Bag';
 import { Profile } from '../Profiler/Profile';
 import { IRoute } from '../Router/Router';
-import { IncomingMessage } from 'http';
+import { RawHttpRequest } from '../Server/RawHttpRequest';
 import { IUploadedFile } from './IUploadedFile';
 import { RequestBody } from './RequestBody';
 export declare class Request {
@@ -20,7 +19,7 @@ export declare class Request {
     private readonly _body;
     private readonly _isSecure;
     private readonly _profile;
-    constructor(r: IncomingMessage, body: RequestBody, profile?: Profile);
+    constructor(r: RawHttpRequest, body: RequestBody, profile?: Profile);
     /**
      * Returns a value from one of the available bags in the following order:
      *  - post fields

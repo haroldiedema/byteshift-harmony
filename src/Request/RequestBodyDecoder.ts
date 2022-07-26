@@ -6,10 +6,12 @@
  */
 'use strict';
 
-import {IncomingMessage, ServerResponse} from 'http';
-import * as querystring                  from 'querystring';
-import {getBoundary, parse}              from './MultipartParser';
-import {RequestBody, RequestBodyPart}    from './RequestBody';
+import {IncomingMessage}              from 'http';
+import * as querystring               from 'querystring';
+import {RawHttpRequest}               from '../Server/RawHttpRequest';
+import {RawHttpResponse}              from '../Server/RawHttpResponse';
+import {getBoundary, parse}           from './MultipartParser';
+import {RequestBody, RequestBodyPart} from './RequestBody';
 
 export class RequestBodyDecoder
 {
@@ -23,7 +25,7 @@ export class RequestBodyDecoder
      * If this process fails, the body is most likely uploaded content like
      * a binary file.
      */
-    public async decode(req: IncomingMessage, res: ServerResponse): Promise<RequestBody>
+    public async decode(req: RawHttpRequest, res: RawHttpResponse): Promise<RequestBody>
     {
         const body = await this.getRequestBody(req, res);
         const type = (req.headers['content-type'] || '');
@@ -42,12 +44,12 @@ export class RequestBodyDecoder
     /**
      * Parses the given body as a multipart/form-data payload.
      *
-     * @param {ServerResponse} res
+     * @param {RawHttpResponse} res
      * @param {string} type
      * @param {Buffer} body
      * @private
      */
-    private parseMultipartFormData(res: ServerResponse, type: string, body: Buffer): RequestBody
+    private parseMultipartFormData(res: RawHttpResponse, type: string, body: Buffer): RequestBody
     {
         return new RequestBody(body, parse(body, getBoundary(type)) as any);
     }
@@ -55,12 +57,12 @@ export class RequestBodyDecoder
     /**
      * Parses the given body as a x-www-form-urlencoded payload.
      *
-     * @param {ServerResponse} res
+     * @param {RawHttpResponse} res
      * @param {Buffer} body
      * @returns {RequestBody}
      * @private
      */
-    private parseFormUrlEncoded(res: ServerResponse, body: Buffer): RequestBody
+    private parseFormUrlEncoded(res: RawHttpResponse, body: Buffer): RequestBody
     {
         try {
             const data: { [name: string]: any } = querystring.decode(body.toString());
@@ -69,7 +71,7 @@ export class RequestBodyDecoder
             Object.keys(data).forEach((key: string) => {
                 parts.push({
                     name: key,
-                    data: Buffer.from(data[key])
+                    data: Buffer.from(data[key]),
                 });
             });
 
@@ -87,11 +89,11 @@ export class RequestBodyDecoder
      * the maximum upload size.
      *
      * @param {IncomingMessage} req
-     * @param {ServerResponse} res
+     * @param {RawHttpResponse} res
      * @returns {Promise<Buffer>}
      * @private
      */
-    private getRequestBody(req: IncomingMessage, res: ServerResponse): Promise<Buffer>
+    private getRequestBody(req: RawHttpRequest, res: RawHttpResponse): Promise<Buffer>
     {
         let body: Buffer[] = [],
             size: number   = 0;

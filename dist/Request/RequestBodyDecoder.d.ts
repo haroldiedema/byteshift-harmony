@@ -1,5 +1,5 @@
-/// <reference types="node" />
-import { IncomingMessage, ServerResponse } from 'http';
+import { RawHttpRequest } from '../Server/RawHttpRequest';
+import { RawHttpResponse } from '../Server/RawHttpResponse';
 import { RequestBody } from './RequestBody';
 export declare class RequestBodyDecoder {
     private readonly maxUploadSize;
@@ -10,11 +10,11 @@ export declare class RequestBodyDecoder {
      * If this process fails, the body is most likely uploaded content like
      * a binary file.
      */
-    decode(req: IncomingMessage, res: ServerResponse): Promise<RequestBody>;
+    decode(req: RawHttpRequest, res: RawHttpResponse): Promise<RequestBody>;
     /**
      * Parses the given body as a multipart/form-data payload.
      *
-     * @param {ServerResponse} res
+     * @param {RawHttpResponse} res
      * @param {string} type
      * @param {Buffer} body
      * @private
@@ -23,7 +23,7 @@ export declare class RequestBodyDecoder {
     /**
      * Parses the given body as a x-www-form-urlencoded payload.
      *
-     * @param {ServerResponse} res
+     * @param {RawHttpResponse} res
      * @param {Buffer} body
      * @returns {RequestBody}
      * @private
@@ -36,7 +36,7 @@ export declare class RequestBodyDecoder {
      * the maximum upload size.
      *
      * @param {IncomingMessage} req
-     * @param {ServerResponse} res
+     * @param {RawHttpResponse} res
      * @returns {Promise<Buffer>}
      * @private
      */

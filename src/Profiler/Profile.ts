@@ -6,11 +6,11 @@
  */
 'use strict';
 
-import {IncomingMessage} from 'http';
-import {IUploadedFile}   from '../Request/IUploadedFile';
-import {Request}         from '../Request/Request';
-import {Response}        from '../Response/Response';
-import {IRoute}          from '../Router/Router';
+import {IUploadedFile}  from '../Request/IUploadedFile';
+import {Request}        from '../Request/Request';
+import {Response}       from '../Response/Response';
+import {IRoute}         from '../Router/Router';
+import {RawHttpRequest} from '../Server/RawHttpRequest';
 
 export class Profile
 {
@@ -25,7 +25,7 @@ export class Profile
 
     private activeMeasurements: Map<string, number> = new Map();
 
-    constructor(public readonly request: IncomingMessage)
+    constructor(public readonly request: RawHttpRequest)
     {
         this.id   = `h${[...Array(8)].map(() => (~~(Math.random() * 36)).toString(36)).join('')}`;
         this.name = request.url;
@@ -46,17 +46,17 @@ export class Profile
      *
      * @returns {{fieldName: string, files: IUploadedFile[]}[]}
      */
-    public get files(): ({fieldName: string, files: IUploadedFile[]})[]
+    public get files(): ({ fieldName: string, files: IUploadedFile[] })[]
     {
-        if (! this.hRequest || this.hRequest.files.size === 0) {
+        if (!this.hRequest || this.hRequest.files.size === 0) {
             return [];
         }
 
-        const result: ({fieldName: string, files: IUploadedFile[]})[] = [];
+        const result: ({ fieldName: string, files: IUploadedFile[] })[] = [];
 
         Object.keys(this.hRequest.files.all).forEach((fieldName: string) => {
             let files = this.hRequest.files.get(fieldName);
-            if (! Array.isArray(files)) {
+            if (!Array.isArray(files)) {
                 files = [files];
             }
 

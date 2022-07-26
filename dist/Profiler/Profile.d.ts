@@ -1,11 +1,10 @@
-/// <reference types="node" />
-import { IncomingMessage } from 'http';
 import { IUploadedFile } from '../Request/IUploadedFile';
 import { Request } from '../Request/Request';
 import { Response } from '../Response/Response';
 import { IRoute } from '../Router/Router';
+import { RawHttpRequest } from '../Server/RawHttpRequest';
 export declare class Profile {
-    readonly request: IncomingMessage;
+    readonly request: RawHttpRequest;
     readonly id: string;
     readonly name: string;
     readonly createdAt: Date;
@@ -14,7 +13,7 @@ export declare class Profile {
     hRoute?: IRoute;
     hResponse?: Response;
     private activeMeasurements;
-    constructor(request: IncomingMessage);
+    constructor(request: RawHttpRequest);
     /**
      * Returns the response HTTP status code.
      *
