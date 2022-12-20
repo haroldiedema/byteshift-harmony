@@ -407,7 +407,7 @@ export class ProfilerController
             background: #303030;
         }
         header {
-            background: #3a3a3a;
+            background: linear-gradient(to bottom, 0% #3a3a3a, 100% #3f3f3f);
             display: flex;
             flex-direction: row;
             width: 100%;

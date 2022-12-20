@@ -1935,7 +1935,7 @@ class ProfilerController {
             background: #303030;
         }
         header {
-            background: #3a3a3a;
+            background: linear-gradient(to bottom, 0% #3a3a3a, 100% #3f3f3f);
             display: flex;
             flex-direction: row;
             width: 100%;
@@ -3245,6 +3245,10 @@ class Harmony {
                 controller = this.options.serviceContainer
                     ? this.options.serviceContainer.get(route._controller[0])
                     : new route._controller[0]();
+                // Support async service containers.
+                if (typeof controller.then === 'function') {
+                    controller = await controller;
+                }
             }
             if (typeof controller[route._controller[1]] !== 'function') {
                 throw new InternalServerError('Method "' + route._controller[1] + '" is not an accessible method in this controller.');

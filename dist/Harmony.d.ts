@@ -291,7 +291,7 @@ export interface IConstructorOptions extends IServerOptions {
  * Represents a service container.
  */
 export interface IServiceContainer {
-    get(ctor: new (...args: any[]) => any): any;
+    get(ctor: new (...args: any[]) => any): any | Promise<any>;
 }
 /**
  * Represents a Harmony plugin that configures itself inside the server by

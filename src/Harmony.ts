@@ -447,8 +447,13 @@ export class Harmony
                 controller = new ProfilerController(this.profiler);
             } else {
                 controller = this.options.serviceContainer
-                             ? this.options.serviceContainer.get(route._controller[0])
-                             : new route._controller[0]();
+                    ? this.options.serviceContainer.get(route._controller[0])
+                    : new route._controller[0]();
+
+                // Support async service containers.
+                if (typeof controller.then === 'function') {
+                    controller = await controller;
+                }
             }
 
             if (typeof controller[route._controller[1]] !== 'function') {
@@ -803,7 +808,7 @@ export interface IConstructorOptions extends IServerOptions
  */
 export interface IServiceContainer
 {
-    get(ctor: new (...args: any[]) => any): any;
+    get(ctor: new (...args: any[]) => any): any | Promise<any>;
 }
 
 /**
