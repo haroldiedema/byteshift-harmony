@@ -124,14 +124,11 @@ export class Response
             response.setHeader('Set-Cookie', cookieString);
         }
 
-        // Write HTTP status & headers.
-        response.writeHead(this._code, this._headers.all);
-
         // Check for compression support.
         const buffer = Buffer.isBuffer(this._content) ? this._content : Buffer.from(this._content);
 
         // Write response & finalize the request.
-        Compression.send(request, response, buffer, compressionOptions);
+        Compression.send(request, response, this._code, this._headers.all, buffer, compressionOptions);
     }
 }
 

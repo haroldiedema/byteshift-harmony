@@ -11,6 +11,8 @@ export class Compression
     public static send(
         request: Request,
         response: RawHttpResponse,
+        status: number,
+        headers: Record<string, string>,
         content: Buffer,
         options: { enabled: boolean, minSize?: number },
     ): void
@@ -25,63 +27,94 @@ export class Compression
         const minSize: number  = options.minSize || 1024;
 
         if (content.length < minSize || ! encoding) {
-            response.write(content);
-            response.end();
-            return;
+            return this.sendUncompressed(response, status, headers, content);
         }
 
         switch (encoding) {
             case this.brotli:
-                return this.sendBrotli(response, content);
+                return this.sendBrotli(response, status, headers, content);
             case this.gzip:
-                return this.sendGzip(response, content);
+                return this.sendGzip(response, status, headers, content);
             case this.deflate:
-                return this.sendDeflate(response, content);
+                return this.sendDeflate(response, status, headers, content);
             default:
-                return this.sendUncompressed(response, content);
+                return this.sendUncompressed(response, status, headers, content);
         }
     }
 
-    private static sendUncompressed(response: RawHttpResponse, content: Buffer): void
+    private static sendUncompressed(
+        response: RawHttpResponse,
+        status: number,
+        headers: Record<string, string>,
+        content: Buffer,
+    ): void
     {
+        response.writeHead(status, headers);
         response.write(content);
         response.end();
     }
 
-    private static sendGzip(response: RawHttpResponse, content: Buffer): void
+    private static sendGzip(
+        response: RawHttpResponse,
+        status: number,
+        headers: Record<string, string>,
+        content: Buffer,
+    ): void
     {
         zlib.gzip(content, (err, compressed) => {
             if (err) {
-                return Compression.sendUncompressed(response, content);
+                return Compression.sendUncompressed(response, status, headers, content);
             }
-            response.setHeader('Content-Encoding', this.gzip);
-            response.setHeader('Vary', 'Accept-Encoding');
+
+            headers['Content-Encoding'] = this.gzip;
+            headers['Content-Length']   = String(compressed.length);
+            headers['Vary']             = 'Accept-Encoding';
+
+            response.writeHead(status, headers);
             response.write(compressed);
             response.end();
         });
     }
 
-    private static sendBrotli(response: RawHttpResponse, content: Buffer): void
+    private static sendBrotli(
+        response: RawHttpResponse,
+        status: number,
+        headers: Record<string, string>,
+        content: Buffer,
+    ): void
     {
         zlib.brotliCompress(content, (err, compressed) => {
             if (err) {
-                return Compression.sendUncompressed(response, content);
+                return Compression.sendUncompressed(response, status, headers, content);
             }
-            response.setHeader('Content-Encoding', this.brotli);
-            response.setHeader('Vary', 'Accept-Encoding');
+
+            headers['Content-Encoding'] = this.brotli;
+            headers['Content-Length']   = String(compressed.length);
+            headers['Vary']             = 'Accept-Encoding';
+
+            response.writeHead(status, headers);
             response.write(compressed);
             response.end();
         });
     }
 
-    private static sendDeflate(response: RawHttpResponse, content: Buffer): void
+    private static sendDeflate(
+        response: RawHttpResponse,
+        status: number,
+        headers: Record<string, string>,
+        content: Buffer,
+    ): void
     {
         zlib.deflate(content, (err, compressed) => {
             if (err) {
-                return Compression.sendUncompressed(response, content);
+                return Compression.sendUncompressed(response, status, headers, content);
             }
-            response.setHeader('Content-Encoding', this.deflate);
-            response.setHeader('Vary', 'Accept-Encoding');
+
+            headers['Content-Encoding'] = this.deflate;
+            headers['Content-Length']   = String(compressed.length);
+            headers['Vary']             = 'Accept-Encoding';
+
+            response.writeHead(status, headers);
             response.write(compressed);
             response.end();
         });
