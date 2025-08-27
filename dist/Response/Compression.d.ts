@@ -5,7 +5,7 @@ export declare class Compression {
     private static gzip;
     private static deflate;
     private static brotli;
-    static send(request: Request, response: RawHttpResponse, content: Buffer, options: {
+    static send(request: Request, response: RawHttpResponse, status: number, headers: Record<string, string>, content: Buffer, options: {
         enabled: boolean;
         minSize?: number;
     }): void;

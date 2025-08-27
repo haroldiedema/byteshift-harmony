@@ -121,7 +121,7 @@ export class Response
         // Write cookie headers.
         const cookies = this._cookies.serialize();
         for (let cookieString of cookies) {
-            response.setHeader('Set-Cookie', cookieString);
+            this.headers.set('Set-Cookie', cookieString);
         }
 
         // Check for compression support.

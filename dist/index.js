@@ -273,7 +273,7 @@ class Compression {
     static gzip = 'gzip';
     static deflate = 'deflate';
     static brotli = 'br';
-    static send(request, response, content, options) {
+    static send(request, response, status, headers, content, options) {
         if (!options.enabled) {
             response.write(content);
             response.end();
@@ -282,54 +282,59 @@ class Compression {
         const encoding = Compression.selectEncoding(request.headers.get('Accept-Encoding') || '');
         const minSize = options.minSize || 1024;
         if (content.length < minSize || !encoding) {
-            response.write(content);
-            response.end();
-            return;
+            return this.sendUncompressed(response, status, headers, content);
         }
         switch (encoding) {
             case this.brotli:
-                return this.sendBrotli(response, content);
+                return this.sendBrotli(response, status, headers, content);
             case this.gzip:
-                return this.sendGzip(response, content);
+                return this.sendGzip(response, status, headers, content);
             case this.deflate:
-                return this.sendDeflate(response, content);
+                return this.sendDeflate(response, status, headers, content);
             default:
-                return this.sendUncompressed(response, content);
+                return this.sendUncompressed(response, status, headers, content);
         }
     }
-    static sendUncompressed(response, content) {
+    static sendUncompressed(response, status, headers, content) {
+        response.writeHead(status, headers);
         response.write(content);
         response.end();
     }
-    static sendGzip(response, content) {
+    static sendGzip(response, status, headers, content) {
         zlib__namespace.gzip(content, (err, compressed) => {
             if (err) {
-                return Compression.sendUncompressed(response, content);
+                return Compression.sendUncompressed(response, status, headers, content);
             }
-            response.setHeader('Content-Encoding', this.gzip);
-            response.setHeader('Vary', 'Accept-Encoding');
+            headers['Content-Encoding'] = this.gzip;
+            headers['Content-Length'] = String(compressed.length);
+            headers['Vary'] = 'Accept-Encoding';
+            response.writeHead(status, headers);
             response.write(compressed);
             response.end();
         });
     }
-    static sendBrotli(response, content) {
+    static sendBrotli(response, status, headers, content) {
         zlib__namespace.brotliCompress(content, (err, compressed) => {
             if (err) {
-                return Compression.sendUncompressed(response, content);
+                return Compression.sendUncompressed(response, status, headers, content);
             }
-            response.setHeader('Content-Encoding', this.brotli);
-            response.setHeader('Vary', 'Accept-Encoding');
+            headers['Content-Encoding'] = this.brotli;
+            headers['Content-Length'] = String(compressed.length);
+            headers['Vary'] = 'Accept-Encoding';
+            response.writeHead(status, headers);
             response.write(compressed);
             response.end();
         });
     }
-    static sendDeflate(response, content) {
+    static sendDeflate(response, status, headers, content) {
         zlib__namespace.deflate(content, (err, compressed) => {
             if (err) {
-                return Compression.sendUncompressed(response, content);
+                return Compression.sendUncompressed(response, status, headers, content);
             }
-            response.setHeader('Content-Encoding', this.deflate);
-            response.setHeader('Vary', 'Accept-Encoding');
+            headers['Content-Encoding'] = this.deflate;
+            headers['Content-Length'] = String(compressed.length);
+            headers['Vary'] = 'Accept-Encoding';
+            response.writeHead(status, headers);
             response.write(compressed);
             response.end();
         });
@@ -436,14 +441,12 @@ class Response {
         // Write cookie headers.
         const cookies = this._cookies.serialize();
         for (let cookieString of cookies) {
-            response.setHeader('Set-Cookie', cookieString);
+            this.headers.set('Set-Cookie', cookieString);
         }
-        // Write HTTP status & headers.
-        response.writeHead(this._code, this._headers.all);
         // Check for compression support.
         const buffer = Buffer.isBuffer(this._content) ? this._content : Buffer.from(this._content);
         // Write response & finalize the request.
-        Compression.send(request, response, buffer, compressionOptions);
+        Compression.send(request, response, this._code, this._headers.all, buffer, compressionOptions);
     }
 }
 exports.HttpStatus = void 0;
@@ -3320,6 +3323,7 @@ class Harmony {
         profile.stop('Decode request');
         profile.start('Controller');
         let controller;
+        let hasSentResponse = false;
         try {
             if (!route) {
                 throw new NotFoundError();
@@ -3393,6 +3397,7 @@ class Harmony {
             if (!response.isSent) {
                 profile.hResponse = response;
                 response.send(request, res, this.compressionOptions);
+                hasSentResponse = true;
             }
             profile.stop('Response event handlers');
         }
@@ -3403,7 +3408,6 @@ class Harmony {
             // on certain types of errors, for example rendering a custom 404
             // or 500 page.
             const errorEvent = new ErrorEvent(e, request, controller, route ? route._controller[1] : undefined);
-            let hasSentResponse = false;
             for (let listener of this.errorEventListeners) {
                 const stopPropagation = false === await listener.callback(errorEvent);
                 // Send the response if the listener defined one and if we

@@ -442,6 +442,7 @@ export class Harmony
         profile.start('Controller');
 
         let controller;
+        let hasSentResponse = false;
 
         try {
             if (! route) {
@@ -546,6 +547,8 @@ export class Harmony
             if (! response.isSent) {
                 profile.hResponse = response;
                 response.send(request, res, this.compressionOptions);
+                hasSentResponse   = true;
+
             }
             profile.stop('Response event handlers');
         } catch (e: any) {
@@ -555,7 +558,6 @@ export class Harmony
             // on certain types of errors, for example rendering a custom 404
             // or 500 page.
             const errorEvent    = new ErrorEvent(e, request, controller, route ? route._controller[1] : undefined);
-            let hasSentResponse = false;
 
             for (let listener of this.errorEventListeners) {
                 const stopPropagation = false === await listener.callback(errorEvent);
