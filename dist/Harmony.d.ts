@@ -27,6 +27,7 @@ export declare class Harmony {
     private responseEventListeners;
     private upgradeEventListeners;
     private typedControllerArguments;
+    private compressionOptions;
     constructor(options: IConstructorOptions);
     /**
      * Starts the HTTP server.
@@ -141,6 +142,28 @@ export declare class Harmony {
     private handleControllerAction;
 }
 export interface IConstructorOptions extends IServerOptions {
+    /**
+     * Whether to enable compression for responses.
+     *
+     * The application reads the "Accept-Encoding" header and compresses
+     * the response using either Brotli or Gzip compression, depending on
+     * what the client supports.
+     */
+    compression?: {
+        /**
+         * Whether to enable response compression based on the request's
+         * "Accept-Encoding" header. No compression is applied if the client
+         * does not support any of our compression algorithms.
+         */
+        enabled: boolean;
+        /**
+         * The minimum size of the response body before compression is applied.
+         * This allows you to skip compression for small responses, as the
+         * compression overhead may actually increase the size of the response
+         * or may consume unnecessary CPU resources.
+         */
+        minSize?: number;
+    };
     static?: {
         /**
          * One or more directories to serve static assets from.

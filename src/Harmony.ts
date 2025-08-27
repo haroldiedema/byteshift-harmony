@@ -57,6 +57,7 @@ export class Harmony
     private responseEventListeners: ResponseEventListener[]               = [];
     private upgradeEventListeners: UpgradeEventListener[]                 = [];
     private typedControllerArguments: Map<any, (request: Request) => any> = new Map();
+    private compressionOptions: { enabled: boolean, minSize?: number }    = {enabled: false, minSize: 1024};
 
     constructor(private readonly options: IConstructorOptions)
     {
@@ -64,12 +65,16 @@ export class Harmony
             options.httpVersion = 1;
         }
 
-        this.profiler = new Profiler(!!options.profiler?.enabled, options.profiler?.maxProfiles ?? 50);
+        this.profiler = new Profiler(!! options.profiler?.enabled, options.profiler?.maxProfiles ?? 50);
         this.router   = new Router();
         this.server   = options.httpVersion === 1 ? new Http1Server(options, this.handle.bind(this)) : new Http2Server(
             options,
             this.handle.bind(this),
         );
+
+        if (options.compression) {
+            this.compressionOptions = options.compression;
+        }
 
         this.requestDecoder = new RequestBodyDecoder(options.maxUploadSize || (1048576));
 
@@ -89,7 +94,7 @@ export class Harmony
         // Register a firewall event listener for the firewall.
         if (typeof options.profiler?.firewall === 'function') {
             this.registerRequestEventListener(async (e: RequestEvent) => {
-                if (e.route._controller[0] === ProfilerController && !await options.profiler.firewall(e)) {
+                if (e.route._controller[0] === ProfilerController && ! await options.profiler.firewall(e)) {
                     e.setResponse(new Response('', HttpStatus.UNAUTHORIZED));
                 }
             });
@@ -273,7 +278,7 @@ export class Harmony
      */
     public getSessionByRequest(request: Request): Session
     {
-        if (!this.sessionManager) {
+        if (! this.sessionManager) {
             throw new Error('Session management is disabled.');
         }
 
@@ -439,7 +444,7 @@ export class Harmony
         let controller;
 
         try {
-            if (!route) {
+            if (! route) {
                 throw new NotFoundError();
             }
 
@@ -477,7 +482,7 @@ export class Harmony
             for (let listener of this.requestEventListeners) {
                 stopPropagation = false === await listener.callback(requestEvent);
 
-                if (!response && requestEvent.hasResponse() && !requestEvent.getResponse().isSent) {
+                if (! response && requestEvent.hasResponse() && ! requestEvent.getResponse().isSent) {
                     response = requestEvent.getResponse();
                 }
 
@@ -489,7 +494,7 @@ export class Harmony
 
             // Only handle the controller action if a request listener did not
             // send a response yet.
-            if (!response) {
+            if (! response) {
                 // Handle the actual controller method.
                 response = await this.handleControllerAction(controller, route._controller[1], route, request, profile);
 
@@ -497,9 +502,11 @@ export class Harmony
 
                 // A controller method must return a Response object, unless it
                 // is annotated with the @Template decorator.
-                if (!(response instanceof Response)) {
+                if (! (response instanceof Response)) {
                     if (controller.__TEMPLATES__ && controller.__TEMPLATES__[route._controller[1]]) {
-                        const session = this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined;
+                        const session = this.sessionManager
+                            ? this.sessionManager.getSessionByRequest(request)
+                            : undefined;
                         response      = await this.templateManager.render(
                             request,
                             session,
@@ -509,7 +516,7 @@ export class Harmony
                     }
 
                     // Do we have a response now?
-                    if (!(response instanceof Response)) {
+                    if (! (response instanceof Response)) {
                         throw new InternalServerError('Method "' + route._controller[1] + '" did not return a Response object.');
                     }
                 }
@@ -536,9 +543,9 @@ export class Harmony
                 }
             }
 
-            if (!response.isSent) {
+            if (! response.isSent) {
                 profile.hResponse = response;
-                response.send(res);
+                response.send(request, res, this.compressionOptions);
             }
             profile.stop('Response event handlers');
         } catch (e: any) {
@@ -559,7 +566,7 @@ export class Harmony
                     const response = errorEvent.getResponse();
 
                     if (false === response.isSent) {
-                        response.send(res);
+                        response.send(request, res, this.compressionOptions);
                         hasSentResponse   = true;
                         profile.hResponse = response;
                     }
@@ -574,7 +581,7 @@ export class Harmony
             profile.stop('Handle error');
         }
 
-        if (!(route && route._controller[0] === ProfilerController)) {
+        if (! (route && route._controller[0] === ProfilerController)) {
             this.profiler.save(profile);
         }
     }
@@ -606,7 +613,7 @@ export class Harmony
         const typedArguments = new Map<any, (request: Request) => any>();
         typedArguments.set(Request, (r: Request) => r);
         typedArguments.set(Session, (r: Request) => {
-            if (!this.sessionManager) {
+            if (! this.sessionManager) {
                 throw new InternalServerError('Controller attempted to access Session, but sessions are disabled.');
             }
             return this.sessionManager.getSessionByRequest(request);
@@ -638,6 +645,30 @@ export class Harmony
 
 export interface IConstructorOptions extends IServerOptions
 {
+    /**
+     * Whether to enable compression for responses.
+     *
+     * The application reads the "Accept-Encoding" header and compresses
+     * the response using either Brotli or Gzip compression, depending on
+     * what the client supports.
+     */
+    compression?: {
+        /**
+         * Whether to enable response compression based on the request's
+         * "Accept-Encoding" header. No compression is applied if the client
+         * does not support any of our compression algorithms.
+         */
+        enabled: boolean;
+
+        /**
+         * The minimum size of the response body before compression is applied.
+         * This allows you to skip compression for small responses, as the
+         * compression overhead may actually increase the size of the response
+         * or may consume unnecessary CPU resources.
+         */
+        minSize?: number;
+    }
+
     static?: {
         /**
          * One or more directories to serve static assets from.

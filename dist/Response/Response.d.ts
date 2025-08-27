@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { Bag } from '../Bag';
 import { CookieBag } from '../Cookie/CookieBag';
+import { Request } from '../Request/Request';
 import { RawHttpResponse } from '../Server/RawHttpResponse';
 export declare class Response {
     private _code;
@@ -50,7 +51,10 @@ export declare class Response {
     /**
      * Sends this request to the client.
      */
-    send(response: RawHttpResponse): void;
+    send(request: Request, response: RawHttpResponse, compressionOptions: {
+        enabled: boolean;
+        minSize?: number;
+    }): void;
 }
 export declare enum HttpStatus {
     CONTINUE = 100,

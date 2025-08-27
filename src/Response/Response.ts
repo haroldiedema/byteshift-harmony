@@ -8,8 +8,9 @@
 
 import {Bag}             from '../Bag';
 import {CookieBag}       from '../Cookie/CookieBag';
-import {ServerResponse}  from 'http';
+import {Request}         from '../Request/Request';
 import {RawHttpResponse} from '../Server/RawHttpResponse';
+import {Compression}     from './Compression';
 
 export class Response
 {
@@ -99,7 +100,11 @@ export class Response
     /**
      * Sends this request to the client.
      */
-    public send(response: RawHttpResponse): void
+    public send(
+        request: Request,
+        response: RawHttpResponse,
+        compressionOptions: { enabled: boolean, minSize?: number },
+    ): void
     {
         // Abort if the native response was already sent. This will occur
         // solely when an error is triggered that has been internally caught.
@@ -122,9 +127,11 @@ export class Response
         // Write HTTP status & headers.
         response.writeHead(this._code, this._headers.all);
 
+        // Check for compression support.
+        const buffer = Buffer.isBuffer(this._content) ? this._content : Buffer.from(this._content);
+
         // Write response & finalize the request.
-        response.write(this._content);
-        response.end();
+        Compression.send(request, response, buffer, compressionOptions);
     }
 }
 

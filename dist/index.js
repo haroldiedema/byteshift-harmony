@@ -2,6 +2,7 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+var zlib = require('zlib');
 var tls = require('tls');
 require('reflect-metadata');
 var https = require('https');
@@ -31,6 +32,7 @@ function _interopNamespace(e) {
     return Object.freeze(n);
 }
 
+var zlib__namespace = /*#__PURE__*/_interopNamespace(zlib);
 var https__default = /*#__PURE__*/_interopDefaultLegacy(https);
 var querystring__namespace = /*#__PURE__*/_interopNamespace(querystring);
 var http__default = /*#__PURE__*/_interopDefaultLegacy(http);
@@ -267,6 +269,85 @@ class ServerError extends Error {
     }
 }
 
+class Compression {
+    static gzip = 'gzip';
+    static deflate = 'deflate';
+    static brotli = 'br';
+    static send(request, response, content, options) {
+        if (!options.enabled) {
+            response.write(content);
+            response.end();
+            return;
+        }
+        const encoding = Compression.selectEncoding(request.headers.get('Accept-Encoding') || '');
+        const minSize = options.minSize || 1024;
+        if (content.length < minSize || !encoding) {
+            response.write(content);
+            response.end();
+            return;
+        }
+        switch (encoding) {
+            case this.brotli:
+                return this.sendBrotli(response, content);
+            case this.gzip:
+                return this.sendGzip(response, content);
+            case this.deflate:
+                return this.sendDeflate(response, content);
+            default:
+                return this.sendUncompressed(response, content);
+        }
+    }
+    static sendUncompressed(response, content) {
+        response.write(content);
+        response.end();
+    }
+    static sendGzip(response, content) {
+        zlib__namespace.gzip(content, (err, compressed) => {
+            if (err) {
+                return Compression.sendUncompressed(response, content);
+            }
+            response.setHeader('Content-Encoding', this.gzip);
+            response.setHeader('Vary', 'Accept-Encoding');
+            response.write(compressed);
+            response.end();
+        });
+    }
+    static sendBrotli(response, content) {
+        zlib__namespace.brotliCompress(content, (err, compressed) => {
+            if (err) {
+                return Compression.sendUncompressed(response, content);
+            }
+            response.setHeader('Content-Encoding', this.brotli);
+            response.setHeader('Vary', 'Accept-Encoding');
+            response.write(compressed);
+            response.end();
+        });
+    }
+    static sendDeflate(response, content) {
+        zlib__namespace.deflate(content, (err, compressed) => {
+            if (err) {
+                return Compression.sendUncompressed(response, content);
+            }
+            response.setHeader('Content-Encoding', this.deflate);
+            response.setHeader('Vary', 'Accept-Encoding');
+            response.write(compressed);
+            response.end();
+        });
+    }
+    static selectEncoding(acceptEncoding) {
+        if (acceptEncoding.includes(this.brotli)) {
+            return this.brotli;
+        }
+        if (acceptEncoding.includes(this.gzip)) {
+            return this.gzip;
+        }
+        if (acceptEncoding.includes(this.deflate)) {
+            return this.deflate;
+        }
+        return null;
+    }
+}
+
 /* Byteshift Harmony                                                               _         _             __   _ _____
  *    A component-based HTTP server micro-framework                               | |__ _  _| |_ ___  ___ / /  (_) _/ /_
  *                                                                                | '_ \ || |  _/ -_|(_-</ _ \/ / _/ __/
@@ -341,7 +422,7 @@ class Response {
     /**
      * Sends this request to the client.
      */
-    send(response) {
+    send(request, response, compressionOptions) {
         // Abort if the native response was already sent. This will occur
         // solely when an error is triggered that has been internally caught.
         if (response.headersSent) {
@@ -359,9 +440,10 @@ class Response {
         }
         // Write HTTP status & headers.
         response.writeHead(this._code, this._headers.all);
+        // Check for compression support.
+        const buffer = Buffer.isBuffer(this._content) ? this._content : Buffer.from(this._content);
         // Write response & finalize the request.
-        response.write(this._content);
-        response.end();
+        Compression.send(request, response, buffer, compressionOptions);
     }
 }
 exports.HttpStatus = void 0;
@@ -1542,7 +1624,7 @@ class RawHttpResponse {
     }
 }
 
-var template = "<!DOCTYPE html>\n<html>\n<head>\n    <title>Error</title>\n    <meta charset=\"UTF-8\">\n    <style type=\"text/css\">\n    body, html {\n        font-family: Arial, sans-serif;\n        font-size: 14px;\n        color: #272727;\n        background: #eee;\n        display: flex;\n        flex-direction: column;\n        justify-content: center;\n        align-items: center;\n        width: 100%;\n        height: 100%;\n        padding: 0;\n        margin: 0;\n    }\n\n    * { box-sizing: border-box; }\n\n    main {\n        width: 800px;\n        border: 1px solid #dadade;\n        border-radius: 6px;\n        background: #fff;\n        box-shadow: rgba(50, 50, 93, 0.25) 0 13px 27px -5px, rgba(0, 0, 0, 0.3) 0 8px 16px -8px;\n        overflow: hidden;\n    }\n\n    img {\n        margin-bottom: 10px;\n    }\n\n    header {\n        display: flex;\n        flex-direction: column;\n        align-items: flex-start;\n        justify-content: flex-start;\n        background: #444;\n        color: #fff;\n    }\n\n    header > .title {\n        width: 100%;\n        font-family: \"Arial\", sans-serif;\n        font-weight: lighter;\n        font-size: 48px;\n        padding: 10px;\n        text-align: center;\n    }\n    footer {\n        padding: 5px;\n        width: 100%;\n        background: #eee;\n        color: #777;\n        font-weight: lighter;\n        font-size: 14px;\n        text-align: center;\n    }\n    section {\n        padding: 20px;\n        text-align: center;\n        font-size: 16px;\n    }\n\n    section > pre {\n        padding: 20px;\n        background: #333;\n        color: #eee;\n        text-align: left;\n        width: 100%;\n        white-space: pre-wrap;\n        font-size: 13px;\n    }\n    </style>\n</head>\n<body>\n<img id=\"logo\" src=\"data:image/png;base64,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\" alt=\"\">\n<main>\n    <header>\n        <div class=\"title\">Something went wrong</div>\n    </header>\n    <section>\n        {{ message }}\n        <pre>{{ trace }}</pre>\n    </section>\n    <footer>\n        {{ title }}\n    </footer>\n</main>\n</body>\n</html>\n";
+var template = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n    <title>Error</title>\r\n    <meta charset=\"UTF-8\">\r\n    <style type=\"text/css\">\r\n    body, html {\r\n        font-family: Arial, sans-serif;\r\n        font-size: 14px;\r\n        color: #272727;\r\n        background: #eee;\r\n        display: flex;\r\n        flex-direction: column;\r\n        justify-content: center;\r\n        align-items: center;\r\n        width: 100%;\r\n        height: 100%;\r\n        padding: 0;\r\n        margin: 0;\r\n    }\r\n\r\n    * { box-sizing: border-box; }\r\n\r\n    main {\r\n        width: 800px;\r\n        border: 1px solid #dadade;\r\n        border-radius: 6px;\r\n        background: #fff;\r\n        box-shadow: rgba(50, 50, 93, 0.25) 0 13px 27px -5px, rgba(0, 0, 0, 0.3) 0 8px 16px -8px;\r\n        overflow: hidden;\r\n    }\r\n\r\n    img {\r\n        margin-bottom: 10px;\r\n    }\r\n\r\n    header {\r\n        display: flex;\r\n        flex-direction: column;\r\n        align-items: flex-start;\r\n        justify-content: flex-start;\r\n        background: #444;\r\n        color: #fff;\r\n    }\r\n\r\n    header > .title {\r\n        width: 100%;\r\n        font-family: \"Arial\", sans-serif;\r\n        font-weight: lighter;\r\n        font-size: 48px;\r\n        padding: 10px;\r\n        text-align: center;\r\n    }\r\n    footer {\r\n        padding: 5px;\r\n        width: 100%;\r\n        background: #eee;\r\n        color: #777;\r\n        font-weight: lighter;\r\n        font-size: 14px;\r\n        text-align: center;\r\n    }\r\n    section {\r\n        padding: 20px;\r\n        text-align: center;\r\n        font-size: 16px;\r\n    }\r\n\r\n    section > pre {\r\n        padding: 20px;\r\n        background: #333;\r\n        color: #eee;\r\n        text-align: left;\r\n        width: 100%;\r\n        white-space: pre-wrap;\r\n        font-size: 13px;\r\n    }\r\n    </style>\r\n</head>\r\n<body>\r\n<img id=\"logo\" src=\"data:image/png;base64,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\" alt=\"\">\r\n<main>\r\n    <header>\r\n        <div class=\"title\">Something went wrong</div>\r\n    </header>\r\n    <section>\r\n        {{ message }}\r\n        <pre>{{ trace }}</pre>\r\n    </section>\r\n    <footer>\r\n        {{ title }}\r\n    </footer>\r\n</main>\r\n</body>\r\n</html>\r\n";
 
 /* Byteshift Harmony                                                               _         _             __   _ _____
  *    A component-based HTTP server micro-framework                               | |__ _  _| |_ ___  ___ / /  (_) _/ /_
@@ -2956,6 +3038,7 @@ class Harmony {
     responseEventListeners = [];
     upgradeEventListeners = [];
     typedControllerArguments = new Map();
+    compressionOptions = { enabled: false, minSize: 1024 };
     constructor(options) {
         this.options = options;
         if (undefined === options.httpVersion) {
@@ -2964,6 +3047,9 @@ class Harmony {
         this.profiler = new Profiler(!!options.profiler?.enabled, options.profiler?.maxProfiles ?? 50);
         this.router = new Router();
         this.server = options.httpVersion === 1 ? new Http1Server(options, this.handle.bind(this)) : new Http2Server(options, this.handle.bind(this));
+        if (options.compression) {
+            this.compressionOptions = options.compression;
+        }
         this.requestDecoder = new RequestBodyDecoder(options.maxUploadSize || (1048576));
         // Register default error page handler with the lowest priority.
         this.registerErrorEventListener((new HarmonyErrorPage()).onServerError, -Infinity);
@@ -3280,7 +3366,9 @@ class Harmony {
                 // is annotated with the @Template decorator.
                 if (!(response instanceof Response)) {
                     if (controller.__TEMPLATES__ && controller.__TEMPLATES__[route._controller[1]]) {
-                        const session = this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined;
+                        const session = this.sessionManager
+                            ? this.sessionManager.getSessionByRequest(request)
+                            : undefined;
                         response = await this.templateManager.render(request, session, controller.__TEMPLATES__[route._controller[1]], response);
                     }
                     // Do we have a response now?
@@ -3304,7 +3392,7 @@ class Harmony {
             }
             if (!response.isSent) {
                 profile.hResponse = response;
-                response.send(res);
+                response.send(request, res, this.compressionOptions);
             }
             profile.stop('Response event handlers');
         }
@@ -3323,7 +3411,7 @@ class Harmony {
                 if (false === hasSentResponse && errorEvent.hasResponse()) {
                     const response = errorEvent.getResponse();
                     if (false === response.isSent) {
-                        response.send(res);
+                        response.send(request, res, this.compressionOptions);
                         hasSentResponse = true;
                         profile.hResponse = response;
                     }
