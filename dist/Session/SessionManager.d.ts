@@ -17,13 +17,13 @@ export declare class SessionManager {
      *
      * @param {RequestEvent} event
      */
-    onRequest(event: RequestEvent): void;
+    onRequest(event: RequestEvent): Promise<void>;
     /**
      * Invoked right before the response is sent back to the browser.
      *
      * @param {ResponseEvent} event
      */
-    onResponse(event: ResponseEvent): void;
+    onResponse(event: ResponseEvent): Promise<void>;
     /**
      * Returns a Session instance by the given request.
      *

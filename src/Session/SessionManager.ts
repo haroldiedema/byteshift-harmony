@@ -29,14 +29,16 @@ export class SessionManager
      *
      * @param {RequestEvent} event
      */
-    public onRequest(event: RequestEvent): void
+    public async onRequest(event: RequestEvent): Promise<void>
     {
         let _id = event.request.cookies.get(this.cookieName);
+
         if (!_id) {
             _id = this.generateSessionId();
             event.request.cookies.set(this.cookieName, _id);
         }
-        this.sessionData.set(_id, new Session(_id ? this.sessionStorage.get(_id) : '{}'));
+
+        this.sessionData.set(_id, new Session(_id ? await this.sessionStorage.get(_id) : '{}'));
         (event as any).session = this.sessionData.get(_id);
     }
 
@@ -45,10 +47,10 @@ export class SessionManager
      *
      * @param {ResponseEvent} event
      */
-    public onResponse(event: ResponseEvent): void
+    public async onResponse(event: ResponseEvent): Promise<void>
     {
         const sessionId = event.request.cookies.get(this.cookieName);
-        this.sessionStorage.set(sessionId, this.sessionData.get(sessionId).toString());
+        await this.sessionStorage.set(sessionId, this.sessionData.get(sessionId).toString());
 
         event.response.cookies.set(this.cookieName, sessionId, 0);
     }
