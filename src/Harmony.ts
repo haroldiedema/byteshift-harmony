@@ -539,7 +539,7 @@ export class Harmony
                 this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined,
             );
             for (let listener of this.responseEventListeners) {
-                if (false === listener.callback(responseEvent)) {
+                if (false === await listener.callback(responseEvent)) {
                     break;
                 }
             }

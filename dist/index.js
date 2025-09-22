@@ -3390,7 +3390,7 @@ class Harmony {
             profile.start('Response event handlers');
             const responseEvent = new ResponseEvent(request, route, response, this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined);
             for (let listener of this.responseEventListeners) {
-                if (false === listener.callback(responseEvent)) {
+                if (false === await listener.callback(responseEvent)) {
                     break;
                 }
             }
