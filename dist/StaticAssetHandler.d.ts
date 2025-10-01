@@ -30,7 +30,7 @@ export declare class StaticAssetHandler {
      *
      * @param {ErrorEvent} event
      */
-    onErrorEvent(event: ErrorEvent): Promise<void>;
+    onErrorEvent(event: ErrorEvent): Promise<boolean>;
     /**
      * Looks up the absolute path of a file that matches the given name,
      * or undefined if no file could be found.

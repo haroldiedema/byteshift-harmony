@@ -1,6 +1,6 @@
 {
   "name": "@byteshift/harmony",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "description": "A zero-dependency, fully featured, HTTP server micro-framework",
   "author": "Harold Iedema <harold@iedema.me>",
   "devDependencies": {

@@ -133,6 +133,9 @@ export class StaticAssetHandler
         if (! event.hasResponse()) {
             event.setResponse(response);
         }
+
+        // Cancel further event propagation, since we've handled this one.
+        return false;
     }
 
     /**

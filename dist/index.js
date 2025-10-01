@@ -2925,6 +2925,8 @@ class StaticAssetHandler {
         if (!event.hasResponse()) {
             event.setResponse(response);
         }
+        // Cancel further event propagation, since we've handled this one.
+        return false;
     }
     /**
      * Looks up the absolute path of a file that matches the given name,
