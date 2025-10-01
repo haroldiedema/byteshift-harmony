@@ -275,9 +275,7 @@ class Compression {
     static brotli = 'br';
     static send(request, response, status, headers, content, options) {
         if (!options.enabled) {
-            response.write(content);
-            response.end();
-            return;
+            return this.sendUncompressed(response, status, headers, content);
         }
         const encoding = Compression.selectEncoding(request.headers.get('Accept-Encoding') || '');
         const minSize = options.minSize || 1024;

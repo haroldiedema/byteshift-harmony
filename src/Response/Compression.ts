@@ -18,9 +18,7 @@ export class Compression
     ): void
     {
         if (! options.enabled) {
-            response.write(content);
-            response.end();
-            return;
+            return this.sendUncompressed(response, status, headers, content);
         }
 
         const encoding: string = Compression.selectEncoding(request.headers.get('Accept-Encoding') || '');
