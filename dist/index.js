@@ -695,10 +695,14 @@ class UpgradeEvent {
     request;
     socket;
     session;
-    constructor(request, socket, session) {
+    rawHttpRequest;
+    rawHttpHead;
+    constructor(request, socket, session, rawHttpRequest, rawHttpHead) {
         this.request = request;
         this.socket = socket;
         this.session = session;
+        this.rawHttpRequest = rawHttpRequest;
+        this.rawHttpHead = rawHttpHead;
     }
 }
 
@@ -1565,6 +1569,12 @@ class RawHttpRequest {
             ? this.r.http1.on(eventName, callback)
             : this.r.http2.on(eventName, callback);
         return this;
+    }
+    get http1Request() {
+        return this.r.http1;
+    }
+    get http2Request() {
+        return this.r.http2;
     }
 }
 
@@ -2571,8 +2581,8 @@ class Http1Server extends AbstractHttpServer {
      * @inheritDoc
      */
     onUpgradeRequest(callback) {
-        this.server.on('upgrade', (req, socket) => {
-            callback(new RawHttpRequest({ http1: req }), socket);
+        this.server.on('upgrade', (req, socket, head) => {
+            callback(new RawHttpRequest({ http1: req }), socket, head);
         });
     }
     /**
@@ -2616,8 +2626,8 @@ class Http2Server extends AbstractHttpServer {
      * @inheritDoc
      */
     onUpgradeRequest(callback) {
-        this.server.on('upgrade', (req, socket) => {
-            callback(new RawHttpRequest({ http2: req }), socket);
+        this.server.on('upgrade', (req, socket, head) => {
+            callback(new RawHttpRequest({ http2: req }), socket, head);
         });
     }
     /**
@@ -3138,10 +3148,10 @@ class Harmony {
             });
         });
         // Handle upgrade events.
-        this.server.onUpgradeRequest((req, socket) => {
+        this.server.onUpgradeRequest((req, socket, head) => {
             try {
                 const request = new Request(req, new RequestBody(Buffer.from(''), []), new Profile(req));
-                const event = new UpgradeEvent(request, socket, this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined);
+                const event = new UpgradeEvent(request, socket, this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined, req, head);
                 for (let handler of this.upgradeEventListeners) {
                     if (handler.callback(event)) {
                         return;

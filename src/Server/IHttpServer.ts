@@ -46,5 +46,5 @@ export interface IHttpServer
      *
      * @param {(request: RawHttpRequest, socket: Socket) => void} callback
      */
-    onUpgradeRequest(callback: (request: RawHttpRequest, socket: Socket) => void): void;
+    onUpgradeRequest(callback: (request: RawHttpRequest, socket: Socket, head: Buffer) => void): void;
 }

@@ -6,17 +6,20 @@
  */
 'use strict';
 
-import {Session}            from '../Session/Session';
-import {Request}            from '../Request/Request';
-import {IRoute}             from '../Router/Router';
-import {Socket}                   from 'net';
+import {Socket}         from 'net';
+import {Request}        from '../Request/Request';
+import {RawHttpRequest} from '../Server/RawHttpRequest';
+import {Session}        from '../Session/Session';
 
 export class UpgradeEvent
 {
     public constructor(
         public readonly request: Request,
         public readonly socket: Socket,
-        public readonly session?: Session
-    ) {
+        public readonly session: Session | undefined,
+        public readonly rawHttpRequest: RawHttpRequest,
+        public readonly rawHttpHead: Buffer,
+    )
+    {
     }
 }

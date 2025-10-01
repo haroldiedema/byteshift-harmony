@@ -46,10 +46,10 @@ export class Http2Server extends AbstractHttpServer implements IHttpServer
     /**
      * @inheritDoc
      */
-    public onUpgradeRequest(callback: (request: RawHttpRequest, socket: Socket) => void): void
+    public onUpgradeRequest(callback: (request: RawHttpRequest, socket: Socket, head: Buffer) => void): void
     {
-        this.server.on('upgrade', (req: Http2ServerRequest, socket: Socket) => {
-            callback(new RawHttpRequest({http2: req}), socket);
+        this.server.on('upgrade', (req: Http2ServerRequest, socket: Socket, head: Buffer) => {
+            callback(new RawHttpRequest({http2: req}), socket, head);
         });
     }
 

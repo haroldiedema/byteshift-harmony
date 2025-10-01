@@ -185,13 +185,15 @@ export class Harmony
         });
 
         // Handle upgrade events.
-        this.server.onUpgradeRequest((req: RawHttpRequest, socket: Socket) => {
+        this.server.onUpgradeRequest((req: RawHttpRequest, socket: Socket, head: Buffer) => {
             try {
                 const request = new Request(req, new RequestBody(Buffer.from(''), []), new Profile(req));
                 const event   = new UpgradeEvent(
                     request,
                     socket,
                     this.sessionManager ? this.sessionManager.getSessionByRequest(request) : undefined,
+                    req,
+                    head,
                 );
 
                 for (let handler of this.upgradeEventListeners) {

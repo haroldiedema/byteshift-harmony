@@ -103,4 +103,6 @@ export declare class RawHttpRequest {
         http2?: Http2ServerRequest;
     });
     on(eventName: string, callback: (...args: any[]) => any): this;
+    get http1Request(): IncomingMessage | undefined;
+    get http2Request(): Http2ServerRequest | undefined;
 }

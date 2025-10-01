@@ -124,4 +124,14 @@ export class RawHttpRequest
 
         return this;
     }
+
+    public get http1Request(): IncomingMessage | undefined
+    {
+        return this.r.http1;
+    }
+
+    public get http2Request(): Http2ServerRequest | undefined
+    {
+        return this.r.http2;
+    }
 }

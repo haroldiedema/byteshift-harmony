@@ -1,6 +1,7 @@
 /// <reference types="node" />
 /// <reference types="node" />
 /// <reference types="node" />
+/// <reference types="node" />
 import http from 'http';
 import https from 'https';
 import { Socket } from 'net';
@@ -16,7 +17,7 @@ export declare class Http1Server extends AbstractHttpServer implements IHttpServ
     /**
      * @inheritDoc
      */
-    onUpgradeRequest(callback: (request: RawHttpRequest, socket: Socket) => void): void;
+    onUpgradeRequest(callback: (request: RawHttpRequest, socket: Socket, head: Buffer) => void): void;
     /**
      * Handles an incoming HTTP/1 connection.
      *

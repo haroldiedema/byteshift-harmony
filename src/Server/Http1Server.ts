@@ -45,10 +45,10 @@ export class Http1Server extends AbstractHttpServer implements IHttpServer
     /**
      * @inheritDoc
      */
-    public onUpgradeRequest(callback: (request: RawHttpRequest, socket: Socket) => void): void
+    public onUpgradeRequest(callback: (request: RawHttpRequest, socket: Socket, head: Buffer) => void): void
     {
-        this.server.on('upgrade', (req: IncomingMessage, socket: Socket) => {
-            callback(new RawHttpRequest({http1: req}), socket);
+        this.server.on('upgrade', (req: IncomingMessage, socket: Socket, head: Buffer) => {
+            callback(new RawHttpRequest({http1: req}), socket, head);
         });
     }
 
