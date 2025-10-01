@@ -43,7 +43,7 @@ export abstract class AbstractHttpServer implements IHttpServer
     /**
      * @inheritDoc
      */
-    public abstract onUpgradeRequest(callback: (request: RawHttpRequest, socket: Socket) => void): void;
+    public abstract onUpgradeRequest(callback: (request: RawHttpRequest, socket: Socket, head: Buffer) => void): void;
 
     /**
      * @inheritDoc
