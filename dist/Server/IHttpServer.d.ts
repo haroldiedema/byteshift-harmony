@@ -1,5 +1,6 @@
 /// <reference types="node" />
 /// <reference types="node" />
+/// <reference types="node" />
 import { Socket } from 'net';
 import { RawHttpRequest } from './RawHttpRequest';
 export interface IHttpServer {
@@ -7,6 +8,10 @@ export interface IHttpServer {
      * Start listening for incoming connections on the configured port.
      */
     start(): void;
+    /**
+     * Stop listening for incoming connections.
+     */
+    stop(): void;
     /**
      * Invokes the given callback when the server emits the given event.
      *

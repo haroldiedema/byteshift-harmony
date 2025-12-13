@@ -1,4 +1,5 @@
 /// <reference types="node" />
+/// <reference types="node" />
 import { Bag } from '../Bag';
 import { IUploadedFile } from './IUploadedFile';
 export declare class RequestBody {

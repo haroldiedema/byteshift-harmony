@@ -1,4 +1,5 @@
 /// <reference types="node" />
+/// <reference types="node" />
 declare type Input = {
     filename?: string;
     name?: string;

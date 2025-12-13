@@ -1,4 +1,5 @@
 /// <reference types="node" />
+/// <reference types="node" />
 import { Bag } from '../Bag';
 import { Profile } from '../Profiler/Profile';
 import { IRoute } from '../Router/Router';

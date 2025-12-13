@@ -52,4 +52,14 @@ export abstract class AbstractHttpServer implements IHttpServer
     {
         this.server.listen(this.options.port);
     }
+
+    /**
+     * @inheritDoc
+     */
+    public stop(): Promise<void>
+    {
+        return new Promise((resolve, reject) => {
+            this.server.close((err?: Error) => err ? reject(err) : resolve());
+        });
+    }
 }

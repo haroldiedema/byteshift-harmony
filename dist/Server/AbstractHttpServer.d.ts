@@ -1,4 +1,6 @@
 /// <reference types="node" />
+/// <reference types="node" />
+/// <reference types="node" />
 import { Socket } from 'net';
 import { IHttpServer } from './IHttpServer';
 import { IServerOptions } from './IServerOptions';
@@ -21,9 +23,13 @@ export declare abstract class AbstractHttpServer implements IHttpServer {
     /**
      * @inheritDoc
      */
-    abstract onUpgradeRequest(callback: (request: RawHttpRequest, socket: Socket) => void): void;
+    abstract onUpgradeRequest(callback: (request: RawHttpRequest, socket: Socket, head: Buffer) => void): void;
     /**
      * @inheritDoc
      */
     start(): void;
+    /**
+     * @inheritDoc
+     */
+    stop(): Promise<void>;
 }

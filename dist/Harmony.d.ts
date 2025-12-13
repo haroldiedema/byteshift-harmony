@@ -34,6 +34,10 @@ export declare class Harmony {
      */
     start(): void;
     /**
+     * Stops the HTTP server.
+     */
+    stop(): void;
+    /**
      * Embeds the given plugin in this Harmony server instance.
      *
      * @param {IHarmonyPlugin} plugin

@@ -9,13 +9,10 @@
 import {ServerError} from './ServerError';
 import {HttpStatus}  from '../Response/Response';
 
-/**
- * @deprecated Use {@link ForbiddenError} instead.
- */
-export class AccessDeniedError extends ServerError
+export class UnauthorizedError extends ServerError
 {
     constructor(message: string = 'Access to the requested resource is denied.')
     {
-        super('Access denied', message, HttpStatus.FORBIDDEN);
+        super('Access denied', message, HttpStatus.UNAUTHORIZED);
     }
 }

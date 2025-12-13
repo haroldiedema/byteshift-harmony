@@ -217,6 +217,14 @@ export class Harmony
     }
 
     /**
+     * Stops the HTTP server.
+     */
+    public stop(): void
+    {
+        this.server.stop();
+    }
+
+    /**
      * Embeds the given plugin in this Harmony server instance.
      *
      * @param {IHarmonyPlugin} plugin

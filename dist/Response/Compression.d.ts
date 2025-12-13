@@ -1,4 +1,5 @@
 /// <reference types="node" />
+/// <reference types="node" />
 import { Request } from '../Request/Request';
 import { RawHttpResponse } from '../Server/RawHttpResponse';
 export declare class Compression {

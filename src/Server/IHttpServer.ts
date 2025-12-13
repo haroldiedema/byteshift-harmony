@@ -17,6 +17,11 @@ export interface IHttpServer
     start(): void;
 
     /**
+     * Stop listening for incoming connections.
+     */
+    stop(): void;
+
+    /**
      * Invokes the given callback when the server emits the given event.
      *
      * @param {string} eventName

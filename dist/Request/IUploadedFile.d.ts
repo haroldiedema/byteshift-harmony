@@ -1,4 +1,5 @@
 /// <reference types="node" />
+/// <reference types="node" />
 export interface IUploadedFile {
     name: string;
     fileName: string;

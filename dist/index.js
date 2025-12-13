@@ -520,9 +520,24 @@ exports.HttpStatus = void 0;
  * (C)2020, Harold Iedema <harold@iedema.me>                                      |_.__/\_, |\__\___/___/_//_/_/_/ \__/
  * See LICENSE for licensing information                                                |__/             H A R M O N Y
  */
+/**
+ * @deprecated Use {@link ForbiddenError} instead.
+ */
 class AccessDeniedError extends ServerError {
     constructor(message = 'Access to the requested resource is denied.') {
         super('Access denied', message, exports.HttpStatus.FORBIDDEN);
+    }
+}
+
+/* Byteshift Harmony                                                               _         _             __   _ _____
+ *    A component-based HTTP server micro-framework                               | |__ _  _| |_ ___  ___ / /  (_) _/ /_
+ *                                                                                | '_ \ || |  _/ -_|(_-</ _ \/ / _/ __/
+ * (C)2020, Harold Iedema <harold@iedema.me>                                      |_.__/\_, |\__\___/___/_//_/_/_/ \__/
+ * See LICENSE for licensing information                                                |__/             H A R M O N Y
+ */
+class ForbiddenError extends ServerError {
+    constructor(message = 'Access to the requested resource is denied.') {
+        super('Forbidden', message, exports.HttpStatus.FORBIDDEN);
     }
 }
 
@@ -547,6 +562,18 @@ class InternalServerError extends ServerError {
 class NotFoundError extends ServerError {
     constructor(message = 'The requested resource could not be found.') {
         super('Not Found', message, exports.HttpStatus.NOT_FOUND);
+    }
+}
+
+/* Byteshift Harmony                                                               _         _             __   _ _____
+ *    A component-based HTTP server micro-framework                               | |__ _  _| |_ ___  ___ / /  (_) _/ /_
+ *                                                                                | '_ \ || |  _/ -_|(_-</ _ \/ / _/ __/
+ * (C)2020, Harold Iedema <harold@iedema.me>                                      |_.__/\_, |\__\___/___/_//_/_/_/ \__/
+ * See LICENSE for licensing information                                                |__/             H A R M O N Y
+ */
+class UnauthorizedError extends ServerError {
+    constructor(message = 'Access to the requested resource is denied.') {
+        super('Access denied', message, exports.HttpStatus.UNAUTHORIZED);
     }
 }
 
@@ -2535,6 +2562,14 @@ class AbstractHttpServer {
     start() {
         this.server.listen(this.options.port);
     }
+    /**
+     * @inheritDoc
+     */
+    stop() {
+        return new Promise((resolve, reject) => {
+            this.server.close((err) => err ? reject(err) : resolve());
+        });
+    }
 }
 
 /* Byteshift Harmony                                                               _         _             __   _ _____
@@ -3171,6 +3206,12 @@ class Harmony {
         this.server.start();
     }
     /**
+     * Stops the HTTP server.
+     */
+    stop() {
+        this.server.stop();
+    }
+    /**
      * Embeds the given plugin in this Harmony server instance.
      *
      * @param {IHarmonyPlugin} plugin
@@ -3517,6 +3558,7 @@ exports.Bag = Bag;
 exports.Cookie = Cookie;
 exports.CookieBag = CookieBag;
 exports.ErrorEvent = ErrorEvent;
+exports.ForbiddenError = ForbiddenError;
 exports.Harmony = Harmony;
 exports.HtmlResponse = HtmlResponse;
 exports.InternalServerError = InternalServerError;
@@ -3538,6 +3580,7 @@ exports.Session = Session;
 exports.StaticRequestEvent = StaticRequestEvent;
 exports.StaticResponseEvent = StaticResponseEvent;
 exports.Template = Template;
+exports.UnauthorizedError = UnauthorizedError;
 exports.UpgradeEvent = UpgradeEvent;
 exports.h = h;
 //# sourceMappingURL=index.js.map
